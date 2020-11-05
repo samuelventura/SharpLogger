@@ -28,12 +28,14 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.controlPanel = new System.Windows.Forms.TableLayoutPanel();
             this.copyButton = new System.Windows.Forms.Button();
             this.freezeViewCheckBox = new System.Windows.Forms.CheckBox();
             this.showDebugCheckBox = new System.Windows.Forms.CheckBox();
             this.clearButton = new System.Windows.Forms.Button();
             this.logPanel = new SharpLogger.LogPanel();
+            this.timer = new System.Windows.Forms.Timer(this.components);
             this.controlPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -67,6 +69,7 @@
             this.copyButton.TabIndex = 8;
             this.copyButton.Text = "Copy";
             this.copyButton.UseVisualStyleBackColor = true;
+            this.copyButton.Click += new System.EventHandler(this.CopyButton_Click);
             // 
             // freezeViewCheckBox
             // 
@@ -79,6 +82,7 @@
             this.freezeViewCheckBox.TabIndex = 5;
             this.freezeViewCheckBox.Text = "Freeze View";
             this.freezeViewCheckBox.UseVisualStyleBackColor = true;
+            this.freezeViewCheckBox.CheckedChanged += new System.EventHandler(this.FreezeViewCheckBox_CheckedChanged);
             // 
             // showDebugCheckBox
             // 
@@ -91,6 +95,7 @@
             this.showDebugCheckBox.TabIndex = 4;
             this.showDebugCheckBox.Text = "Show Debug";
             this.showDebugCheckBox.UseVisualStyleBackColor = true;
+            this.showDebugCheckBox.CheckedChanged += new System.EventHandler(this.ShowDebugCheckBox_CheckedChanged);
             // 
             // clearButton
             // 
@@ -101,18 +106,30 @@
             this.clearButton.TabIndex = 2;
             this.clearButton.Text = "Clear";
             this.clearButton.UseVisualStyleBackColor = true;
+            this.clearButton.Click += new System.EventHandler(this.ClearButton_Click);
             // 
             // logPanel
             // 
             this.logPanel.AutoScroll = true;
             this.logPanel.BackColor = System.Drawing.Color.Black;
+            this.logPanel.DebugColor = System.Drawing.Color.LightGray;
             this.logPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.logPanel.ErrorColor = System.Drawing.Color.Tomato;
+            this.logPanel.InfoColor = System.Drawing.Color.White;
             this.logPanel.Location = new System.Drawing.Point(0, 34);
             this.logPanel.Name = "logPanel";
+            this.logPanel.SelectionBack = System.Drawing.Color.DodgerBlue;
+            this.logPanel.SelectionFront = System.Drawing.Color.White;
             this.logPanel.Size = new System.Drawing.Size(654, 380);
             this.logPanel.TabIndex = 19;
+            this.logPanel.WarnColor = System.Drawing.Color.Yellow;
             // 
-            // LogViewer
+            // timer
+            // 
+            this.timer.Enabled = true;
+            this.timer.Tick += new System.EventHandler(this.Timer_Tick);
+            // 
+            // LogControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -120,7 +137,7 @@
             this.Controls.Add(this.logPanel);
             this.Controls.Add(this.controlPanel);
             this.DoubleBuffered = true;
-            this.Name = "LogViewer";
+            this.Name = "LogControl";
             this.Size = new System.Drawing.Size(654, 414);
             this.controlPanel.ResumeLayout(false);
             this.controlPanel.PerformLayout();
@@ -137,5 +154,6 @@
         private System.Windows.Forms.CheckBox showDebugCheckBox;
         private System.Windows.Forms.Button clearButton;
         private LogPanel logPanel;
+        private System.Windows.Forms.Timer timer;
     }
 }

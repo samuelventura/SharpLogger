@@ -12,10 +12,19 @@
 * Clear selection on click on no-item
 * Add item to selection by click+ctrl
 * Add item to selection by shift+up/down
+* Copy as text, csv, json, xml
+* Ctrl+c copy
 
 ## Currently Implemented
 
  * Clear selection on clicking non item
  * Toggle selection on control + click
  * Range selection on shift + click
+ * Range selection on control + mouse box
+ * Select with mouse box
  * Full row selection
+
+## Design Decisions
+
+ * Remove TRACE in favor or text search
+ * DEBUG to be only check filter in viewer

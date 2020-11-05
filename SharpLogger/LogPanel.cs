@@ -9,6 +9,14 @@ namespace SharpLogger
 	{
 		private LogItem[] items = new LogItem[0];
 		private LogItem lastClicked;
+		private Point captureStart;
+
+		public Color DebugColor { get; set; } = Color.Gray;
+		public Color InfoColor { get; set; } = Color.White;
+		public Color WarnColor { get; set; } = Color.Yellow;
+		public Color ErrorColor { get; set; } = Color.Tomato;
+		public Color SelectionBack { get; set; } = Color.DodgerBlue;
+		public Color SelectionFront { get; set; } = Color.White;
 
 		public LogPanel()
 		{
@@ -79,7 +87,7 @@ namespace SharpLogger
 		{
 			var client = ClientSize;
 			var offset = AutoScrollPosition;
-			var back = new SolidBrush(Color.DodgerBlue);
+			var back = new SolidBrush(SelectionBack);
 			foreach (var item in items)
 			{
 				var rect = new Rectangle(offset, item.Size);
@@ -91,7 +99,7 @@ namespace SharpLogger
 					if (item.Selected)
                     {
 						e.Graphics.FillRectangle(back, rect);
-						color = Color.White;
+						color = SelectionFront;
 					}
 					TextRenderer.DrawText(e.Graphics, item.Dto.Message, 
 						Font, offset, color);
@@ -102,14 +110,13 @@ namespace SharpLogger
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
-            base.OnMouseClick(e);
-			
+            base.OnMouseClick(e);			
 			var clicked = FindItem(e.Location);
 			var control = IsControlDown();
 			var shift = IsShiftDown();
 			if (clicked != null)
 			{
-				if (shift)
+				if (shift && lastClicked != null)
                 {
 					var start = Math.Min(clicked.Index, lastClicked.Index);
 					var end = Math.Max(clicked.Index, lastClicked.Index);
@@ -136,9 +143,40 @@ namespace SharpLogger
 				//to add so ignore clear 
 				if (!shift && !control)
                 {
+					lastClicked = null;
 					var count = ClearSelection();
 					if (count > 0) Invalidate();
 				}
+			}
+		}
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+			Capture = true;
+			captureStart = e.Location;
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+			var captured = Capture;
+			Capture = false;
+			var captureEnd = e.Location;
+			if (captured && captureEnd != captureStart)
+			{
+				var control = IsControlDown();
+				if (!control) ClearSelection();
+				var rect = new Rectangle(
+					Math.Min(captureStart.X, captureEnd.X),
+					Math.Min(captureStart.Y, captureEnd.Y),
+					Math.Abs(captureStart.X - captureEnd.X),
+					Math.Abs(captureStart.Y - captureEnd.Y));
+				foreach (var item in FindItems(rect))
+				{
+					item.Selected = true;
+				}
+				Invalidate();
 			}
 		}
 
@@ -163,6 +201,25 @@ namespace SharpLogger
 			return count;
 		}
 
+		private LogItem[] FindItems(Rectangle selection)
+		{
+			var list = new List<LogItem>();
+			foreach (var item in items)
+			{
+				//struct are copied on assigment
+				var offset = AutoScrollPosition;
+				offset.Offset(item.Location);
+				var rect = new Rectangle(offset, item.Size);
+				//needs to touch text to select item
+				//rect.Width = HorizontalScroll.Maximum;
+				if (rect.IntersectsWith(selection))
+				{
+					list.Add(item);
+				}
+			}
+			return list.ToArray();
+		}
+
 		private LogItem FindItem(Point click)
         {
 			foreach (var item in items)
@@ -185,16 +242,14 @@ namespace SharpLogger
 		{
 			switch (level)
 			{
-				case LogLevel.TRACE:
-					return Color.DarkGray;
 				case LogLevel.DEBUG:
-					return Color.LightGray;
+					return DebugColor;
 				case LogLevel.INFO:
-					return Color.White;
+					return InfoColor;
 				case LogLevel.WARN:
-					return Color.Yellow;
+					return WarnColor;
 				case LogLevel.ERROR:
-					return Color.Tomato;
+					return ErrorColor;
 			}
 			throw new Exception($"Invalid level {level}");
 		}

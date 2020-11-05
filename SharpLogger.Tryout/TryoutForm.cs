@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Text;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace SharpLogger.Tryout
 {
     public partial class TryoutForm : Form
     {
+        private volatile bool feed;
+
         public TryoutForm()
         {
             InitializeComponent();
@@ -16,24 +18,52 @@ namespace SharpLogger.Tryout
 
         private LogLevel ToLevel(int index)
         {
-            switch(index % 5)
+            switch(index % 4)
             {
                 case 0:
-                    return LogLevel.TRACE;
-                case 1:
                     return LogLevel.DEBUG;
-                case 2:
+                case 1:
                     return LogLevel.INFO;
-                case 3:
+                case 2:
                     return LogLevel.WARN;
-                case 4:
+                case 3:
                     return LogLevel.ERROR;
             }
             throw new Exception($"Invalid index {index}");
         }
 
+        private void TryoutForm_Load(object sender, EventArgs e)
+        {
+            Task.Run(() => {
+                var i = 0;
+                var dts = DateTime.Now;
+                while (true)
+                {
+                    if (!feed)
+                    {
+                        Thread.Sleep(100);
+                        continue;
+                    }
+                    var dto = new LogDto();
+                    var sb = new StringBuilder();
+                    var ts = DateTime.Now - dts;
+                    sb.Append($"Line {i} {ts.TotalSeconds:0.000}");
+                    for (var j = 0; j < i % 100; j++)
+                    {
+                        sb.Append($" {j}");
+                    }
+                    dto.Message = sb.ToString();
+                    dto.Level = ToLevel(i);
+                    logControl.Push(dto);
+                    if (i%10==0) Thread.Sleep(1);
+                    i++;
+                }
+            });
+        }
+
         private void button100_Click(object sender, EventArgs e)
         {
+            tabControl1.SelectedIndex = 0;
             var list = new List<LogDto>();
             for (var i = 0; i < 100; i++)
             {
@@ -51,11 +81,10 @@ namespace SharpLogger.Tryout
             logPanel.SetItems(list.ToArray());
         }
 
-        private void button100k_Click(object sender, EventArgs e)
+        private void checkBoxAsyncFee_CheckedChanged(object sender, EventArgs e)
         {
-            Task.Run(() => { 
-
-            });
+            tabControl1.SelectedIndex = 1;
+            feed = checkBoxAsyncFee.Checked;
         }
     }
 }

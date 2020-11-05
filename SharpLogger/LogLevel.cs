@@ -4,6 +4,6 @@ namespace SharpLogger
 {
     public enum LogLevel
     {
-        TRACE, DEBUG, INFO, WARN, ERROR
+        DEBUG, INFO, WARN, ERROR
     }
 }

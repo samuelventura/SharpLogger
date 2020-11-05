@@ -4,7 +4,7 @@ namespace SharpLogger
 {
     public class LogEvent
     {
-        public LogLevel Level { get; set; } = LogLevel.TRACE;
+        public LogLevel Level { get; set; } = LogLevel.DEBUG;
         public string Source { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
     }
