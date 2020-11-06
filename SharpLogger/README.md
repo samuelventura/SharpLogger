@@ -28,3 +28,4 @@
 
  * Remove TRACE in favor or text search
  * DEBUG to be only check filter in viewer
+ * Items may accumulate if timer not running

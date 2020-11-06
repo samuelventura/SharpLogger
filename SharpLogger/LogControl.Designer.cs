@@ -82,8 +82,7 @@
             this.freezeViewCheckBox.TabIndex = 5;
             this.freezeViewCheckBox.Text = "Freeze View";
             this.freezeViewCheckBox.UseVisualStyleBackColor = true;
-            this.freezeViewCheckBox.CheckedChanged += new System.EventHandler(this.FreezeViewCheckBox_CheckedChanged);
-            // 
+// 
             // showDebugCheckBox
             // 
             this.showDebugCheckBox.AutoSize = true;
@@ -95,7 +94,6 @@
             this.showDebugCheckBox.TabIndex = 4;
             this.showDebugCheckBox.Text = "Show Debug";
             this.showDebugCheckBox.UseVisualStyleBackColor = true;
-            this.showDebugCheckBox.CheckedChanged += new System.EventHandler(this.ShowDebugCheckBox_CheckedChanged);
             // 
             // clearButton
             // 

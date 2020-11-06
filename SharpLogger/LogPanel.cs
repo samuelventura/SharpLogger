@@ -25,7 +25,7 @@ namespace SharpLogger
 			AutoScroll = true;
 		}
 
-		public void SetItems(LogDto[] dtos)
+		public void SetItems(params LogDto[] dtos)
 		{
 			var items = new List<LogItem>();
 			var scroll = new Size(0, 0);
@@ -37,7 +37,8 @@ namespace SharpLogger
 				items.Add(item);
 				item.Dto = dto;
 				item.Location = new Point(0, scroll.Height);
-				item.Size = TextRenderer.MeasureText(item.Dto.Message, Font, client);
+				item.Message = dto.ToString(); //assign before measuring
+				item.Size = TextRenderer.MeasureText(item.Message, Font, client);
 				if (item.Size.Width > scroll.Width) scroll.Width = item.Size.Width;
 				scroll.Height += item.Size.Height;
 				item.Color = ToColor(item.Dto.Level);
@@ -101,7 +102,7 @@ namespace SharpLogger
 						e.Graphics.FillRectangle(back, rect);
 						color = SelectionFront;
 					}
-					TextRenderer.DrawText(e.Graphics, item.Dto.Message, 
+					TextRenderer.DrawText(e.Graphics, item.Message, 
 						Font, offset, color);
 				}
 				offset.Y += item.Size.Height;

@@ -110,17 +110,7 @@ namespace SharpLogger
 		private void ClearButton_Click(object sender, EventArgs e)
         {
 			shown.Clear();
-			dirty = true;
-		}
-
-        private void ShowDebugCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void FreezeViewCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-			dirty = true;
+			logPanel.SetItems();
 		}
 
         private void CopyButton_Click(object sender, EventArgs e)
@@ -130,7 +120,7 @@ namespace SharpLogger
 			if (list.Length == 0) list = logPanel.GetAll();
 			foreach (var dto in list)
 			{
-				sb.AppendLine(dto.Message);
+				sb.AppendLine(dto.ToString());
 			}
 			Clipboard.SetText(sb.ToString());
 		}
