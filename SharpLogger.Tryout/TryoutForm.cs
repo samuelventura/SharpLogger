@@ -2,6 +2,7 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -9,37 +10,65 @@ namespace SharpLogger.Tryout
 {
     public partial class TryoutForm : Form
     {
-        private volatile bool feed;
+        private ILogger logger;
+        private LogRunner logRunner;
+
+        private volatile bool asyncFeed;
+        private volatile bool userLogger;
 
         public TryoutForm()
         {
             InitializeComponent();
         }
 
-        private LogLevel ToLevel(int index)
+        private string ToLevel(int index)
         {
-            switch(index % 4)
+            switch(index % 5)
             {
                 case 0:
-                    return LogLevel.DEBUG;
+                    return LogDto.DEBUG;
                 case 1:
-                    return LogLevel.INFO;
+                    return LogDto.INFO;
                 case 2:
-                    return LogLevel.WARN;
+                    return LogDto.WARN;
                 case 3:
-                    return LogLevel.ERROR;
+                    return LogDto.ERROR;
+                case 4:
+                    return LogDto.SUCCESS;
+            }
+            throw new Exception($"Invalid index {index}");
+        }
+
+        private Color ToColor(int index)
+        {
+            switch (index % 5)
+            {
+                case 0:
+                    return Color.Gray;
+                case 1:
+                    return Color.White;
+                case 2:
+                    return Color.Yellow;
+                case 3:
+                    return Color.Tomato;
+                case 4:
+                    return Color.PaleGreen;
             }
             throw new Exception($"Invalid index {index}");
         }
 
         private void TryoutForm_Load(object sender, EventArgs e)
         {
+            logRunner = new LogRunner();
+            logRunner.AddAppender(logControl);
+            logger = logRunner.Create("DEFAULT");
+
             Task.Run(() => {
                 var i = 0;
                 var dts = DateTime.Now;
                 while (true)
                 {
-                    if (!feed)
+                    if (!asyncFeed)
                     {
                         Thread.Sleep(100);
                         continue;
@@ -54,7 +83,8 @@ namespace SharpLogger.Tryout
                     }
                     dto.Message = sb.ToString();
                     dto.Level = ToLevel(i);
-                    logControl.Push(dto);
+                    if (userLogger) logger.Log(dto.Level, dto.Message);
+                    else logControl.Append(dto);
                     if (i%10==0) Thread.Sleep(1);
                     i++;
                 }
@@ -64,27 +94,33 @@ namespace SharpLogger.Tryout
         private void button100_Click(object sender, EventArgs e)
         {
             tabControl1.SelectedIndex = 0;
-            var list = new List<LogDto>();
+            var list = new List<LogItem>();
             for (var i = 0; i < 100; i++)
             {
-                var dto = new LogDto();
+                var item = new LogItem();
                 var sb = new StringBuilder();
                 sb.Append($" Line {i}");
                 for (var j = 0; j < i; j++)
                 {
                     sb.Append($" {j}");
                 }
-                dto.Message = sb.ToString();
-                dto.Level = ToLevel(i);
-                list.Add(dto);
+                item.Line = sb.ToString();
+                item.Color = ToColor(i);
+                list.Add(item);
             }
             logPanel.SetItems(list.ToArray());
         }
 
-        private void checkBoxAsyncFee_CheckedChanged(object sender, EventArgs e)
+        private void checkBoxAsyncFeed_CheckedChanged(object sender, EventArgs e)
         {
             tabControl1.SelectedIndex = 1;
-            feed = checkBoxAsyncFee.Checked;
+            asyncFeed = checkBoxAsyncFeed.Checked;
+        }
+
+        private void checkBoxUseLogger_CheckedChanged(object sender, EventArgs e)
+        {
+            tabControl1.SelectedIndex = 1;
+            userLogger = checkBoxUseLogger.Checked;
         }
     }
 }

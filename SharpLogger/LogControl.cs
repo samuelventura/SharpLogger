@@ -1,19 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Windows.Forms;
 using System.Drawing;
 using System.Text;
-using System.Linq;
-using System.Windows.Forms;
 
 namespace SharpLogger
 {
-    public partial class LogControl : UserControl
+    public partial class LogControl : UserControl, ILogAppender
     {
-        public LogControl()
+		public const int LIMIT = 100;
+
+		public LogControl()
         {
-            InitializeComponent();
+			colors.Add(LogDto.DEBUG, Color.Gray);
+			colors.Add(LogDto.INFO, Color.White);
+			colors.Add(LogDto.WARN, Color.Yellow);
+			colors.Add(LogDto.ERROR, Color.Tomato);
+			colors.Add(LogDto.SUCCESS, Color.PaleGreen);
+
+			InitializeComponent();
         }
+
 		//DESIGN TIME
 		[Category("Logging")]
 		public Font LogFont
@@ -40,34 +48,46 @@ namespace SharpLogger
 			set { logPanel.SelectionFront = value; }
 		}
 		[Category("Logging")]
+		public Color SuccessColor
+		{
+			get { return colors[LogDto.SUCCESS]; }
+			set { colors[LogDto.SUCCESS] = value; }
+		}
+		[Category("Logging")]
 		public Color ErrorColor
 		{
-			get { return logPanel.ErrorColor; }
-			set { logPanel.ErrorColor = value; }
+			get { return colors[LogDto.ERROR]; }
+			set { colors[LogDto.ERROR] = value; }
 		}
 		[Category("Logging")]
 		public Color WarnColor
 		{
-			get { return logPanel.WarnColor; }
-			set { logPanel.WarnColor = value; }
+			get { return colors[LogDto.WARN]; }
+			set { colors[LogDto.WARN] = value; }
 		}
 		[Category("Logging")]
 		public Color InfoColor
 		{
-			get { return logPanel.InfoColor; }
-			set { logPanel.InfoColor = value; }
+			get { return colors[LogDto.INFO]; }
+			set { colors[LogDto.INFO] = value; }
 		}
 		[Category("Logging")]
 		public Color DebugColor
 		{
-			get { return logPanel.DebugColor; }
-			set { logPanel.DebugColor = value; }
+			get { return colors[LogDto.DEBUG]; }
+			set { colors[LogDto.DEBUG] = value; }
 		}
 		[Category("Logging")]
 		public int LineLimit
 		{
 			get { return limit; }
 			set { limit = value; }
+		}
+		[Category("Logging")]
+		public string LogFormat
+		{
+			get { return formatter.Format; }
+			set { formatter = new PatternLogFormatter(value); }
 		}
 		//DESIGN & RUNTIME
 		[Category("Logging")]
@@ -83,12 +103,19 @@ namespace SharpLogger
 			set { freezeViewCheckBox.Checked = value; }
 		}
 
-		private LinkedList<LogDto> shown = new LinkedList<LogDto>();
+		private PatternLogFormatter formatter = PatternLogFormatter.TIMEONLY_MESSAGE;
+		private Dictionary<string, Color> colors = new Dictionary<string, Color>();
+		private LinkedList<LogItem> shown = new LinkedList<LogItem>();
 		private LinkedList<LogDto> queue = new LinkedList<LogDto>();
-		private int limit = 100;
+		private int limit = LIMIT;
 		private bool dirty;
 
-		public void Push(params LogDto[] dtos)
+		public void AddColor(string level, Color color)
+        {
+			colors.Add(level, color);
+		}
+
+		public void Append(params LogDto[] dtos)
 		{
 			lock (queue)
 			{
@@ -101,9 +128,13 @@ namespace SharpLogger
 		{
 			lock (queue)
 			{
-				var items = queue.ToArray();
-				queue.Clear();
-				return items;
+				var list = new List<LogDto>();
+				while (queue.Count > 0)
+				{
+					list.Add(queue.First.Value);
+					queue.RemoveFirst();
+				}
+				return list.ToArray();
 			}
 		}
 
@@ -118,9 +149,9 @@ namespace SharpLogger
 			var sb = new StringBuilder();
 			var list = logPanel.GetSelected();
 			if (list.Length == 0) list = logPanel.GetAll();
-			foreach (var dto in list)
+			foreach (var item in list)
 			{
-				sb.AppendLine(dto.ToString());
+				sb.AppendLine(item.Line);
 			}
 			Clipboard.SetText(sb.ToString());
 		}
@@ -130,15 +161,19 @@ namespace SharpLogger
 			timer.Enabled = false;
 			var debug = ShowDebug;
 			var freeze = freezeViewCheckBox.Checked;
-			foreach (var item in Pop())
+			foreach (var dto in Pop())
 			{
-				if (item.Level != LogLevel.DEBUG || debug)
+				if (dto.Level != LogDto.DEBUG || debug)
 				{
+					var item = new LogItem();
+					item.Dto = dto;
+					item.Color = ToColor(dto.Level);
+					item.Line = formatter.Convert(dto);
 					shown.AddLast(item);
 					dirty = true;
 				}
 			}
-			if (limit <= 0) limit = 100;
+			if (limit <= 0) limit = LIMIT;
 			while (shown.Count > limit)
 			{
 				shown.RemoveFirst();
@@ -146,10 +181,26 @@ namespace SharpLogger
 			}
 			if (dirty && !freeze)
 			{
-				logPanel.SetItems(shown.ToArray());
+				logPanel.SetItems(Shown());
 				dirty = false;
 			}
 			timer.Enabled = true;
+		}
+
+		private LogItem[] Shown()
+        {
+			var list = new List<LogItem>();
+			foreach (var item in shown) list.Add(item);
+			return list.ToArray();
+		}
+
+		private Color ToColor(string level)
+		{
+			if (colors.TryGetValue(level, out var color))
+            {
+				return color;
+            }
+			throw new Exception($"Invalid level {level}");
 		}
 	}
 }

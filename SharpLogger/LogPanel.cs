@@ -11,10 +11,6 @@ namespace SharpLogger
 		private LogItem lastClicked;
 		private Point captureStart;
 
-		public Color DebugColor { get; set; } = Color.Gray;
-		public Color InfoColor { get; set; } = Color.White;
-		public Color WarnColor { get; set; } = Color.Yellow;
-		public Color ErrorColor { get; set; } = Color.Tomato;
 		public Color SelectionBack { get; set; } = Color.DodgerBlue;
 		public Color SelectionFront { get; set; } = Color.White;
 
@@ -25,27 +21,21 @@ namespace SharpLogger
 			AutoScroll = true;
 		}
 
-		public void SetItems(params LogDto[] dtos)
+		public void SetItems(params LogItem[] items)
 		{
-			var items = new List<LogItem>();
+			this.items = items;
 			var scroll = new Size(0, 0);
 			var client = ClientSize;
 			var index = 0;
-			foreach (var dto in dtos)
+			foreach (var item in items)
 			{
-				var item = new LogItem();
-				items.Add(item);
-				item.Dto = dto;
 				item.Location = new Point(0, scroll.Height);
-				item.Message = dto.ToString(); //assign before measuring
-				item.Size = TextRenderer.MeasureText(item.Message, Font, client);
+				item.Size = TextRenderer.MeasureText(item.Line, Font, client);
 				if (item.Size.Width > scroll.Width) scroll.Width = item.Size.Width;
 				scroll.Height += item.Size.Height;
-				item.Color = ToColor(item.Dto.Level);
 				item.Index = index++;
 			}
 			scroll.Height += Font.Height; //renglon extra
-			this.items = items.ToArray();
 			AutoScrollMinSize = scroll;
 			VerticalScroll.Value = VerticalScroll.Maximum;
 			HorizontalScroll.Value = 0;
@@ -64,22 +54,22 @@ namespace SharpLogger
 			return count;
 		}
 
-		public LogDto[] GetAll()
+		public LogItem[] GetAll()
 		{
-			var list = new List<LogDto>();
+			var list = new List<LogItem>();
 			foreach (var item in items)
 			{
-				list.Add(item.Dto);
+				list.Add(item);
 			}
 			return list.ToArray();
 		}
 
-		public LogDto[] GetSelected()
+		public LogItem[] GetSelected()
         {
-			var list = new List<LogDto>();
+			var list = new List<LogItem>();
 			foreach (var item in items)
 			{
-				if (item.Selected) list.Add(item.Dto);
+				if (item.Selected) list.Add(item);
 			}
 			return list.ToArray();
         }
@@ -102,7 +92,7 @@ namespace SharpLogger
 						e.Graphics.FillRectangle(back, rect);
 						color = SelectionFront;
 					}
-					TextRenderer.DrawText(e.Graphics, item.Message, 
+					TextRenderer.DrawText(e.Graphics, item.Line, 
 						Font, offset, color);
 				}
 				offset.Y += item.Size.Height;
@@ -237,22 +227,6 @@ namespace SharpLogger
                 }
 			}
 			return null;
-		}
-
-		private Color ToColor(LogLevel level)
-		{
-			switch (level)
-			{
-				case LogLevel.DEBUG:
-					return DebugColor;
-				case LogLevel.INFO:
-					return InfoColor;
-				case LogLevel.WARN:
-					return WarnColor;
-				case LogLevel.ERROR:
-					return ErrorColor;
-			}
-			throw new Exception($"Invalid level {level}");
 		}
 	}
 }

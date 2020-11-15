@@ -110,17 +110,13 @@
             // 
             this.logPanel.AutoScroll = true;
             this.logPanel.BackColor = System.Drawing.Color.Black;
-            this.logPanel.DebugColor = System.Drawing.Color.LightGray;
             this.logPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logPanel.ErrorColor = System.Drawing.Color.Tomato;
-            this.logPanel.InfoColor = System.Drawing.Color.White;
             this.logPanel.Location = new System.Drawing.Point(0, 34);
             this.logPanel.Name = "logPanel";
             this.logPanel.SelectionBack = System.Drawing.Color.DodgerBlue;
             this.logPanel.SelectionFront = System.Drawing.Color.White;
             this.logPanel.Size = new System.Drawing.Size(654, 380);
             this.logPanel.TabIndex = 19;
-            this.logPanel.WarnColor = System.Drawing.Color.Yellow;
             // 
             // timer
             // 
