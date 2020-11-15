@@ -31,7 +31,7 @@ namespace SharpLogger
 
         public void Dispose()
         {
-            thread.Dispose();
+            thread.Dispose(() => TryFlush(true));
         }
 
         public void AddAppender(ILogAppender appender)
@@ -48,10 +48,15 @@ namespace SharpLogger
             });
         }
 
-        private void TryFlush()
+        public void Run(Action action)
+        {
+            thread.Run(action);
+        }
+
+        private void TryFlush(bool force = false)
         {
             var elapsed = DateTime.Now - flushed;
-            if (elapsed.TotalMilliseconds > FLUSH)
+            if (force || elapsed.TotalMilliseconds > FLUSH)
             {
                 var list = buffer.ToArray();
                 foreach (var appender in appenders)
@@ -84,7 +89,7 @@ namespace SharpLogger
         }
     }
 
-    class LogThread : IDisposable
+    class LogThread
     {
         private readonly Thread thread;
         private readonly Action idle;
@@ -100,9 +105,9 @@ namespace SharpLogger
             thread.Start();
         }
 
-        public void Dispose()
+        public void Dispose(Action action)
         {
-            Run(() => { queue = null; });
+            Run(() => { queue = null; action(); });
             thread.Join();
         }
 

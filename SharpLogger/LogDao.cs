@@ -7,22 +7,30 @@ using LiteDB;
 
 namespace SharpLogger
 {
-    public class LogDao
+    public class LogDao : ILogAppender, IDisposable
     {
         public static readonly string ASSYPATH = AssyPath();
 
         private static readonly object locker = new object();
 
-        private readonly string path;
+        private readonly LiteDatabase db;
+        private readonly LiteCollection<LogDto> logs;
 
         public LogDao(string path = null)
         {
-            this.path = path ?? ASSYPATH;
+            db = new LiteDatabase(path ?? ASSYPATH);
+            logs = db.GetCollection<LogDto>("Logs");
+            logs.EnsureIndex(x => x.Timestamp);
         }
 
         public void Append(params LogDto[] dtos)
         {
-            Append(path, dtos);
+            logs.InsertBulk(dtos);
+        }
+
+        public void Dispose()
+        {
+            db.Dispose();
         }
 
         public static void Dump(string source, Exception ex, bool show = false)
@@ -76,7 +84,7 @@ namespace SharpLogger
         private static string DumpPath(string id)
         {
             var entry = Assembly.GetEntryAssembly().Location;
-            return Path.ChangeExtension(entry, $"{id}.txt");
+            return Path.ChangeExtension(entry, $"StackTrace.{id}.txt");
         }
 
         private static string AssyPath()
