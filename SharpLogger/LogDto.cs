@@ -23,7 +23,7 @@ namespace SharpLogger
         public override string ToString()
         {
             var dt = Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff");
-            return $"{dt}|{ProcessId}|{ThreadName}|{Level}|{Source}|{Message}";
+            return $"|{dt}|{ProcessId}|{ThreadName}|{Level}|{Source}|{Message}|";
         }
     }
 }

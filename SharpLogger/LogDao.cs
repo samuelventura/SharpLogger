@@ -1,36 +1,31 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Diagnostics;
-using LiteDB;
 
 namespace SharpLogger
 {
     public class LogDao : ILogAppender, IDisposable
     {
-        public static readonly string ASSYPATH = AssyPath();
-
-        private static readonly object locker = new object();
-
-        private readonly LiteDatabase db;
-        private readonly LiteCollection<LogDto> logs;
+        private readonly StreamWriter writer;
 
         public LogDao(string path = null)
         {
-            db = new LiteDatabase(path ?? ASSYPATH);
-            logs = db.GetCollection<LogDto>("Logs");
-            logs.EnsureIndex(x => x.Timestamp);
+            writer = File.AppendText(path ?? AssyPath());
         }
 
         public void Append(params LogDto[] dtos)
         {
-            logs.InsertBulk(dtos);
+            foreach(var dto in dtos)
+            {
+                writer.WriteLine(dto.ToString());
+            }
+            writer.Flush();
         }
 
         public void Dispose()
         {
-            db.Dispose();
+            writer.Dispose();
         }
 
         public static void Dump(string source, Exception ex, bool show = false)
@@ -53,34 +48,6 @@ namespace SharpLogger
             catch (Exception) { }
         }
 
-        public static void Append(string path, params LogDto[] dtos)
-        {
-            lock(locker)
-            {
-                BsonMapper.Global.EmptyStringToNull = false;
-                using (var db = new LiteDatabase(path))
-                {
-                    var logs = db.GetCollection<LogDto>("Logs");
-                    logs.InsertBulk(dtos);
-                }
-            }
-        }
-
-        public static IEnumerable<LogDto> Filter(string path, DateTime from, DateTime to, Func<LogDto, bool> filter = null)
-        {
-            lock (locker)
-            {
-                using (var db = new LiteDatabase(path))
-                {
-                    var logs = db.GetCollection<LogDto>("Logs");
-                    logs.EnsureIndex(x => x.Timestamp);
-                    return logs.Find(x => x.Timestamp >= from
-                        && x.Timestamp <= to
-                        && filter == null ? true : filter(x));
-                }
-            }
-        }
-
         private static string DumpPath(string id)
         {
             var entry = Assembly.GetEntryAssembly().Location;
@@ -90,7 +57,7 @@ namespace SharpLogger
         private static string AssyPath()
         {
             var entry = Assembly.GetEntryAssembly().Location;
-            return Path.ChangeExtension(entry, "SharpLogger");
+            return Path.ChangeExtension(entry, "log.txt");
         }
     }
 }

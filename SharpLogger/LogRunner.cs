@@ -6,17 +6,18 @@ namespace SharpLogger
 {
     public class LogRunner : ILogHandler, IDisposable
     {
-        public const int SLEEP = 10; //millis
-        public const int FLUSH = 50; //millis
-
         private readonly List<ILogAppender> appenders;
         private readonly List<ILogAppender> removes;
         private readonly List<LogDto> buffer;
         private readonly LogThread thread;
+        private readonly int sleepMs;
+        private readonly int flushMs;
         private DateTime flushed;
 
-        public LogRunner()
+        public LogRunner(int flush = 100, int sleep = 10)
         {
+            flushMs = flush;
+            sleepMs = sleep;
             flushed = DateTime.Now;
             appenders = new List<ILogAppender>();
             removes = new List<ILogAppender>();
@@ -56,7 +57,7 @@ namespace SharpLogger
         private void TryFlush(bool force = false)
         {
             var elapsed = DateTime.Now - flushed;
-            if (force || elapsed.TotalMilliseconds > FLUSH)
+            if (force || elapsed.TotalMilliseconds > flushMs)
             {
                 var list = buffer.ToArray();
                 foreach (var appender in appenders)
@@ -85,7 +86,7 @@ namespace SharpLogger
         private void Idle()
         {
             TryFlush();
-            Thread.Sleep(SLEEP);
+            Thread.Sleep(sleepMs);
         }
     }
 
