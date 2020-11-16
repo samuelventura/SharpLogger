@@ -7,35 +7,53 @@ namespace SharpLogger
 {
 	public class LogPanel : Panel
 	{
-		private LogItem[] items = new LogItem[0];
-		private LogItem lastClicked;
+		private LogLine[] lines = new LogLine[0];
+		private LogLine lastClicked;
 		private Point captureStart;
+		private Font font;
+		private Pen debug;
 
 		public Color SelectionBack { get; set; } = Color.DodgerBlue;
 		public Color SelectionFront { get; set; } = Color.White;
 
+		//Monospace font required because MeasureText is expensive
+		//Ubiquitous monospace fonts: Consolas, Courier
+		//FontFamily.GenericMonospace creates Courier New
+		public float FontSize { 
+			get { return font.Size; }
+			set { font = new Font(FontFamily.GenericMonospace, 
+				value, FontStyle.Regular, GraphicsUnit.Pixel); }
+		}
+
 		public LogPanel()
 		{
+			//debug = new Pen(Color.Purple);
 			BackColor = Color.Black;
 			DoubleBuffered = true;
 			AutoScroll = true;
+			FontSize = 12;
 		}
 
-		public void SetItems(params LogItem[] items)
+		public void SetLines(params LogLine[] lines)
 		{
-			this.items = items;
+			this.lines = lines;
 			var scroll = new Size(0, 0);
-			var client = ClientSize;
 			var index = 0;
-			foreach (var item in items)
+			//returns width of an extra character 1=14, 2=21, ...
+			var single = TextRenderer.MeasureText("-", font);
+			single.Width /= 2; //returns 14 for asigned font size = 12
+			foreach (var line in lines)
 			{
-				item.Location = new Point(0, scroll.Height);
-				item.Size = TextRenderer.MeasureText(item.Line, Font, client);
-				if (item.Size.Width > scroll.Width) scroll.Width = item.Size.Width;
-				scroll.Height += item.Size.Height;
-				item.Index = index++;
+				line.Location = new Point(0, scroll.Height);
+				//Expects single text line per log line
+				//Monospace font required because MeasureText is expensive
+				//line.Size = TextRenderer.MeasureText(line.Line, font);
+				line.Size = new Size((line.Line.Length + 1) * single.Width, single.Height);
+				if (line.Size.Width > scroll.Width) scroll.Width = line.Size.Width;
+				scroll.Height += line.Size.Height;
+				line.Index = index++;
 			}
-			scroll.Height += Font.Height; //renglon extra
+			scroll.Height += single.Height; //renglon extra
 			AutoScrollMinSize = scroll;
 			VerticalScroll.Value = VerticalScroll.Maximum;
 			HorizontalScroll.Value = 0;
@@ -47,29 +65,29 @@ namespace SharpLogger
 		public int CountSelected()
 		{
 			var count = 0;
-			foreach (var item in items)
+			foreach (var item in lines)
 			{
 				if (item.Selected) count++;
 			}
 			return count;
 		}
 
-		public LogItem[] GetAll()
+		public LogLine[] GetAll()
 		{
-			var list = new List<LogItem>();
-			foreach (var item in items)
+			var list = new List<LogLine>();
+			foreach (var line in lines)
 			{
-				list.Add(item);
+				list.Add(line);
 			}
 			return list.ToArray();
 		}
 
-		public LogItem[] GetSelected()
+		public LogLine[] GetSelected()
         {
-			var list = new List<LogItem>();
-			foreach (var item in items)
+			var list = new List<LogLine>();
+			foreach (var line in lines)
 			{
-				if (item.Selected) list.Add(item);
+				if (line.Selected) list.Add(line);
 			}
 			return list.ToArray();
         }
@@ -79,29 +97,33 @@ namespace SharpLogger
 			var client = ClientSize;
 			var offset = AutoScrollPosition;
 			var back = new SolidBrush(SelectionBack);
-			foreach (var item in items)
+			foreach (var line in lines)
 			{
-				var rect = new Rectangle(offset, item.Size);
+				var rect = new Rectangle(offset, line.Size);
 				//draw full row for selected items
 				rect.Width = Math.Max(client.Width, HorizontalScroll.Maximum);
 				if (e.ClipRectangle.IntersectsWith(rect))
 				{
-					var color = item.Color;
-					if (item.Selected)
+					var color = line.Color;
+					if (line.Selected)
                     {
 						e.Graphics.FillRectangle(back, rect);
 						color = SelectionFront;
 					}
-					TextRenderer.DrawText(e.Graphics, item.Line, 
-						Font, offset, color);
+					TextRenderer.DrawText(e.Graphics, line.Line, font, offset, color);
+					if (debug != null)
+                    {
+						e.Graphics.DrawRectangle(debug, offset.X, offset.Y, line.Size.Width, line.Size.Height);
+					}
 				}
-				offset.Y += item.Size.Height;
+				offset.Y += line.Size.Height;
 			}
 		}
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
-            base.OnMouseClick(e);			
+            base.OnMouseClick(e);
+			if (e.Button != MouseButtons.Left) return;
 			var clicked = FindItem(e.Location);
 			var control = IsControlDown();
 			var shift = IsShiftDown();
@@ -113,7 +135,7 @@ namespace SharpLogger
 					var end = Math.Max(clicked.Index, lastClicked.Index);
 					for (var i = start; i <= end; i++)
 					{
-						items[i].Selected = true;
+						lines[i].Selected = true;
 					}
 				}
 				else if (control)
@@ -144,6 +166,7 @@ namespace SharpLogger
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+			if (e.Button != MouseButtons.Left) return;
 			Capture = true;
 			captureStart = e.Location;
         }
@@ -151,6 +174,7 @@ namespace SharpLogger
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
+			if (e.Button != MouseButtons.Left) return;
 			var captured = Capture;
 			Capture = false;
 			var captureEnd = e.Location;
@@ -163,9 +187,9 @@ namespace SharpLogger
 					Math.Min(captureStart.Y, captureEnd.Y),
 					Math.Abs(captureStart.X - captureEnd.X),
 					Math.Abs(captureStart.Y - captureEnd.Y));
-				foreach (var item in FindItems(rect))
+				foreach (var line in FindItems(rect))
 				{
-					item.Selected = true;
+					line.Selected = true;
 				}
 				Invalidate();
 			}
@@ -184,46 +208,46 @@ namespace SharpLogger
 		private int ClearSelection()
         {
 			var count = 0;
-			foreach (var item in items)
+			foreach (var line in lines)
 			{
-				if (item.Selected) count++;
-				item.Selected = false;
+				if (line.Selected) count++;
+				line.Selected = false;
 			}
 			return count;
 		}
 
-		private LogItem[] FindItems(Rectangle selection)
+		private LogLine[] FindItems(Rectangle selection)
 		{
-			var list = new List<LogItem>();
-			foreach (var item in items)
+			var list = new List<LogLine>();
+			foreach (var line in lines)
 			{
 				//struct are copied on assigment
 				var offset = AutoScrollPosition;
-				offset.Offset(item.Location);
-				var rect = new Rectangle(offset, item.Size);
+				offset.Offset(line.Location);
+				var rect = new Rectangle(offset, line.Size);
 				//needs to touch text to select item
 				//rect.Width = HorizontalScroll.Maximum;
 				if (rect.IntersectsWith(selection))
 				{
-					list.Add(item);
+					list.Add(line);
 				}
 			}
 			return list.ToArray();
 		}
 
-		private LogItem FindItem(Point click)
+		private LogLine FindItem(Point click)
         {
-			foreach (var item in items)
+			foreach (var line in lines)
 			{
 				//struct are copied on assigment
 				var offset = AutoScrollPosition;
-				offset.Offset(item.Location);
-				var rect = new Rectangle(offset, item.Size);
-				//needs to click text to select item
+				offset.Offset(line.Location);
+				var rect = new Rectangle(offset, line.Size);
+				//needs to click text to select line
 				//rect.Width = HorizontalScroll.Maximum;
 				if (rect.Contains(click))
                 {
-					return item;
+					return line;
                 }
 			}
 			return null;

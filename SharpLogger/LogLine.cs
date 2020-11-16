@@ -3,10 +3,11 @@ using System.Drawing;
 
 namespace SharpLogger
 {
-    public class LogItem
+    public class LogLine
     {
         public LogDto Dto { get; set; } = new LogDto();
         public int Index { get; set; }
+        public string Message { get; set; } = string.Empty;
         public string Line { get; set; } = string.Empty;
         public Point Location { get; set; } = new Point();
         public Size Size { get; set; } = new Size();

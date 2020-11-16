@@ -4,28 +4,24 @@ using System.Threading;
 
 namespace SharpLogger
 {
-    public class LogRunner : ILogHandler, IDisposable
+    public partial class LogRunner : ILogHandler, IDisposable
     {
-        private readonly List<ILogAppender> appenders;
-        private readonly List<ILogAppender> removes;
-        private readonly List<LogDto> buffer;
+        private readonly List<AppenderRT> appenders;
+        private readonly List<AppenderRT> removes;
         private readonly LogThread thread;
+        private readonly Logger logger;
         private readonly int sleepMs;
-        private readonly int flushMs;
-        private DateTime flushed;
 
-        public LogRunner(int flush = 100, int sleep = 10)
+        public LogRunner(int sleepMs = 10)
         {
-            flushMs = flush;
-            sleepMs = sleep;
-            flushed = DateTime.Now;
-            appenders = new List<ILogAppender>();
-            removes = new List<ILogAppender>();
-            buffer = new List<LogDto>();
+            this.sleepMs = sleepMs;
+            appenders = new List<AppenderRT>();
+            removes = new List<AppenderRT>();
             thread = new LogThread(Idle);
+            logger = Create(typeof(LogRunner).Name);
         }
 
-        public ILogger Create(string source)
+        public Logger Create(string source)
         {
             return new Logger(this, source);
         }
@@ -35,17 +31,25 @@ namespace SharpLogger
             thread.Dispose(() => TryFlush(true));
         }
 
-        public void AddAppender(ILogAppender appender)
+        public void AddAppender(ILogAppender appender, int millis = 100)
         {
-            thread.Run(() => appenders.Add(appender));
+            thread.Run(() => appenders.Add(new AppenderRT() {
+                Buffer = new List<LogDto>(),
+                Appender = appender,
+                Millis = millis,
+            }));
         }
 
-        public void Handle(LogDto log)
+        public void Append(LogDto log)
         {
             thread.Run(() =>
             {
-                buffer.Add(log);
-                TryFlush();
+                foreach (var rt in appenders)
+                {
+                    rt.Buffer.Add(log);
+                    if (rt.Oldest.HasValue) continue;
+                    rt.Oldest = log.Timestamp;
+                }
             });
         }
 
@@ -56,31 +60,34 @@ namespace SharpLogger
 
         private void TryFlush(bool force = false)
         {
-            var elapsed = DateTime.Now - flushed;
-            if (force || elapsed.TotalMilliseconds > flushMs)
+            foreach (var rt in appenders)
             {
-                var list = buffer.ToArray();
-                foreach (var appender in appenders)
+                var now = DateTime.Now;
+                var oldest = rt.Oldest ?? now;
+                var elapsed = now - oldest;
+                var flush = elapsed.TotalMilliseconds > rt.Millis;
+                if (force || flush)
                 {
                     try
                     {
-                        appender.Append(list);
+                        //Should not switch to UI to prevent thread
+                        //deathlock when disposing from UI events
+                        rt.Appender.Append(rt.Buffer.ToArray());
+                        rt.Buffer.Clear();
                     }
                     catch (Exception ex)
                     {
-                        removes.Add(appender);
+                        removes.Add(rt);
                         thread.Dump(ex);
                     }
                 }
-                //autoremove excepting appenders
-                foreach (var appender in removes)
-                {
-                    appenders.Remove(appender);
-                }
-                flushed = DateTime.Now;
-                removes.Clear();
-                buffer.Clear();
             }
+            //autoremove excepting appenders
+            foreach (var appender in removes)
+            {
+                appenders.Remove(appender);
+            }
+            removes.Clear();
         }
 
         private void Idle()
@@ -88,9 +95,17 @@ namespace SharpLogger
             TryFlush();
             Thread.Sleep(sleepMs);
         }
+
+        private class AppenderRT
+        {
+            public ILogAppender Appender;
+            public List<LogDto> Buffer;
+            public DateTime? Oldest;
+            public int Millis;
+        }
     }
 
-    class LogThread
+    public class LogThread
     {
         private readonly Thread thread;
         private readonly Action idle;
@@ -147,6 +162,39 @@ namespace SharpLogger
                 try { action(); }
                 catch (Exception ex) { Dump(ex); }
             }
+        }
+    }
+
+    public partial class LogRunner : ILogger
+    {
+        public void Log(string level, string format, params object[] args)
+        {
+            logger.Log(level, format, args);
+        }
+
+        public void Debug(string format, params object[] args)
+        {
+            logger.Debug(format, args);
+        }
+
+        public void Info(string format, params object[] args)
+        {
+            logger.Info(format, args);
+        }
+
+        public void Warn(string format, params object[] args)
+        {
+            logger.Warn(format, args);
+        }
+
+        public void Error(string format, params object[] args)
+        {
+            logger.Error(format, args);
+        }
+
+        public void Success(string format, params object[] args)
+        {
+            logger.Success(format, args);
         }
     }
 }

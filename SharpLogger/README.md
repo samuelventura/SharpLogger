@@ -6,6 +6,7 @@
 * Persist all with post filtered view
 * Log files default to EntryAssy.SharpLogger
 * Log files configurable to EntryAssy.ID.SharpLogger
+* Human readable indexed log files
 * NET Core compatible
 
 ## LogViewer Control Spec
@@ -24,6 +25,7 @@
 * Custom row formatting
 * Auto persistible configuration
 * Visual feedback on mouse box selection
+* Copy context menu
 
 ## Currently Implemented
 

@@ -55,7 +55,7 @@
     </Compile>
     <Compile Include="LogFormat.cs" />
     <Compile Include="Logger.cs" />
-    <Compile Include="LogItem.cs" />
+    <Compile Include="LogLine.cs" />
     <Compile Include="LogPanel.cs">
       <SubType>Component</SubType>
     </Compile>

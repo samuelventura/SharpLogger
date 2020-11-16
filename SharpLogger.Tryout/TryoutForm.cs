@@ -10,12 +10,11 @@ namespace SharpLogger.Tryout
 {
     public partial class TryoutForm : Form
     {
-        private LogRunner logRunner;
-        private ILogger logger;
+        private LogRunner log;
         private LogDao dao;
 
         private volatile bool asyncFeed;
-        private volatile bool userLogger;
+        private volatile bool useLogger;
 
         public TryoutForm()
         {
@@ -58,14 +57,33 @@ namespace SharpLogger.Tryout
             throw new Exception($"Invalid index {index}");
         }
 
+        private void SetLines(int count)
+        {
+            tabControl1.SelectedIndex = 0;
+            var list = new List<LogLine>();
+            for (var i = 0; i < count; i++)
+            {
+                var line = new LogLine();
+                var sb = new StringBuilder();
+                sb.Append($" Line {i}");
+                for (var j = 0; j < i; j++)
+                {
+                    sb.Append($" {j}");
+                }
+                line.Line = sb.ToString();
+                line.Color = ToColor(i);
+                list.Add(line);
+            }
+            logPanel.SetLines(list.ToArray());
+        }
+
         private void TryoutForm_Load(object sender, EventArgs e)
         {
             dao = new LogDao();
-            logRunner = new LogRunner();
-            logRunner.AddAppender(dao);
-            logRunner.AddAppender(logControl);
-            logRunner.Run(() => throw new Exception("Test Exception"));
-            logger = logRunner.Create("DEFAULT");
+            log = new LogRunner();
+            log.AddAppender(dao);
+            log.AddAppender(logControl);
+            log.Run(() => throw new Exception("Test Exception"));
 
             Task.Run(() => {
                 var i = 0;
@@ -87,7 +105,8 @@ namespace SharpLogger.Tryout
                     }
                     dto.Message = sb.ToString();
                     dto.Level = ToLevel(i);
-                    if (userLogger) logger.Log(dto.Level, dto.Message);
+                    if (i % 5 == 2) dto.Message = Environment.StackTrace;
+                    if (useLogger) log.Log(dto.Level, dto.Message);
                     else logControl.Append(dto);
                     if (i%10==0) Thread.Sleep(1);
                     i++;
@@ -95,24 +114,21 @@ namespace SharpLogger.Tryout
             });
         }
 
+        private void TryoutForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            log.Dispose();
+        }
+
         private void button100_Click(object sender, EventArgs e)
         {
-            tabControl1.SelectedIndex = 0;
-            var list = new List<LogItem>();
-            for (var i = 0; i < 100; i++)
-            {
-                var item = new LogItem();
-                var sb = new StringBuilder();
-                sb.Append($" Line {i}");
-                for (var j = 0; j < i; j++)
-                {
-                    sb.Append($" {j}");
-                }
-                item.Line = sb.ToString();
-                item.Color = ToColor(i);
-                list.Add(item);
-            }
-            logPanel.SetItems(list.ToArray());
+            SetLines(100);
+            logControl.LineLimit = 100;
+        }
+
+        private void button1000_Click(object sender, EventArgs e)
+        {
+            SetLines(1000);
+            logControl.LineLimit = 1000;
         }
 
         private void checkBoxAsyncFeed_CheckedChanged(object sender, EventArgs e)
@@ -124,7 +140,19 @@ namespace SharpLogger.Tryout
         private void checkBoxUseLogger_CheckedChanged(object sender, EventArgs e)
         {
             tabControl1.SelectedIndex = 1;
-            userLogger = checkBoxUseLogger.Checked;
+            useLogger = checkBoxUseLogger.Checked;
+        }
+
+        private void buttonRefresh10_Click(object sender, EventArgs e)
+        {
+            tabControl1.SelectedIndex = 1;
+            logControl.PollPeriod = 10;
+        }
+
+        private void buttonRefresh100_Click(object sender, EventArgs e)
+        {
+            tabControl1.SelectedIndex = 1;
+            logControl.PollPeriod = 100;
         }
     }
 }

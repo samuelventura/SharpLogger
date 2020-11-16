@@ -30,6 +30,10 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TryoutForm));
             this.panelTop = new System.Windows.Forms.Panel();
+            this.buttonRefresh100 = new System.Windows.Forms.Button();
+            this.buttonRefresh10 = new System.Windows.Forms.Button();
+            this.button1000 = new System.Windows.Forms.Button();
+            this.checkBoxUseLogger = new System.Windows.Forms.CheckBox();
             this.checkBoxAsyncFeed = new System.Windows.Forms.CheckBox();
             this.button100 = new System.Windows.Forms.Button();
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -37,7 +41,6 @@
             this.logPanel = new SharpLogger.LogPanel();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.logControl = new SharpLogger.LogControl();
-            this.checkBoxUseLogger = new System.Windows.Forms.CheckBox();
             this.panelTop.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -46,6 +49,9 @@
             // 
             // panelTop
             // 
+            this.panelTop.Controls.Add(this.buttonRefresh100);
+            this.panelTop.Controls.Add(this.buttonRefresh10);
+            this.panelTop.Controls.Add(this.button1000);
             this.panelTop.Controls.Add(this.checkBoxUseLogger);
             this.panelTop.Controls.Add(this.checkBoxAsyncFeed);
             this.panelTop.Controls.Add(this.button100);
@@ -55,10 +61,51 @@
             this.panelTop.Size = new System.Drawing.Size(800, 63);
             this.panelTop.TabIndex = 0;
             // 
+            // buttonRefresh100
+            // 
+            this.buttonRefresh100.Location = new System.Drawing.Point(529, 12);
+            this.buttonRefresh100.Name = "buttonRefresh100";
+            this.buttonRefresh100.Size = new System.Drawing.Size(108, 39);
+            this.buttonRefresh100.TabIndex = 6;
+            this.buttonRefresh100.Text = "Refresh 100ms";
+            this.buttonRefresh100.UseVisualStyleBackColor = true;
+            this.buttonRefresh100.Click += new System.EventHandler(this.buttonRefresh100_Click);
+            // 
+            // buttonRefresh10
+            // 
+            this.buttonRefresh10.Location = new System.Drawing.Point(415, 12);
+            this.buttonRefresh10.Name = "buttonRefresh10";
+            this.buttonRefresh10.Size = new System.Drawing.Size(108, 39);
+            this.buttonRefresh10.TabIndex = 5;
+            this.buttonRefresh10.Text = "Refresh 10ms";
+            this.buttonRefresh10.UseVisualStyleBackColor = true;
+            this.buttonRefresh10.Click += new System.EventHandler(this.buttonRefresh10_Click);
+            // 
+            // button1000
+            // 
+            this.button1000.Location = new System.Drawing.Point(126, 12);
+            this.button1000.Name = "button1000";
+            this.button1000.Size = new System.Drawing.Size(108, 39);
+            this.button1000.TabIndex = 4;
+            this.button1000.Text = "1000 Logs";
+            this.button1000.UseVisualStyleBackColor = true;
+            this.button1000.Click += new System.EventHandler(this.button1000_Click);
+            // 
+            // checkBoxUseLogger
+            // 
+            this.checkBoxUseLogger.AutoSize = true;
+            this.checkBoxUseLogger.Location = new System.Drawing.Point(328, 24);
+            this.checkBoxUseLogger.Name = "checkBoxUseLogger";
+            this.checkBoxUseLogger.Size = new System.Drawing.Size(81, 17);
+            this.checkBoxUseLogger.TabIndex = 3;
+            this.checkBoxUseLogger.Text = "Use Logger";
+            this.checkBoxUseLogger.UseVisualStyleBackColor = true;
+            this.checkBoxUseLogger.CheckedChanged += new System.EventHandler(this.checkBoxUseLogger_CheckedChanged);
+            // 
             // checkBoxAsyncFeed
             // 
             this.checkBoxAsyncFeed.AutoSize = true;
-            this.checkBoxAsyncFeed.Location = new System.Drawing.Point(126, 24);
+            this.checkBoxAsyncFeed.Location = new System.Drawing.Point(240, 24);
             this.checkBoxAsyncFeed.Name = "checkBoxAsyncFeed";
             this.checkBoxAsyncFeed.Size = new System.Drawing.Size(82, 17);
             this.checkBoxAsyncFeed.TabIndex = 2;
@@ -103,6 +150,7 @@
             this.logPanel.AutoScroll = true;
             this.logPanel.BackColor = System.Drawing.Color.Black;
             this.logPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.logPanel.FontSize = 12F;
             this.logPanel.Location = new System.Drawing.Point(3, 3);
             this.logPanel.Name = "logPanel";
             this.logPanel.SelectionBack = System.Drawing.Color.DodgerBlue;
@@ -127,14 +175,15 @@
             this.logControl.DebugColor = System.Drawing.Color.Gray;
             this.logControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.logControl.ErrorColor = System.Drawing.Color.Tomato;
+            this.logControl.FontSize = 12F;
             this.logControl.FreezeView = false;
             this.logControl.InfoColor = System.Drawing.Color.White;
-            this.logControl.LineLimit = 100;
+            this.logControl.LineLimit = 1000;
             this.logControl.Location = new System.Drawing.Point(3, 3);
             this.logControl.LogBackColor = System.Drawing.Color.Black;
-            this.logControl.LogFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.logControl.LogFormat = "{0:HH:mm:ss.fff} {5}";
+            this.logControl.LogFormat = "{TS:HH:mm:ss.fff} {MESSAGE}";
             this.logControl.Name = "logControl";
+            this.logControl.PollPeriod = 10;
             this.logControl.SelectionBack = System.Drawing.Color.DodgerBlue;
             this.logControl.SelectionFront = System.Drawing.Color.White;
             this.logControl.ShowDebug = false;
@@ -142,17 +191,6 @@
             this.logControl.SuccessColor = System.Drawing.Color.PaleGreen;
             this.logControl.TabIndex = 1;
             this.logControl.WarnColor = System.Drawing.Color.Yellow;
-            // 
-            // checkBoxUseLogger
-            // 
-            this.checkBoxUseLogger.AutoSize = true;
-            this.checkBoxUseLogger.Location = new System.Drawing.Point(214, 24);
-            this.checkBoxUseLogger.Name = "checkBoxUseLogger";
-            this.checkBoxUseLogger.Size = new System.Drawing.Size(81, 17);
-            this.checkBoxUseLogger.TabIndex = 3;
-            this.checkBoxUseLogger.Text = "Use Logger";
-            this.checkBoxUseLogger.UseVisualStyleBackColor = true;
-            this.checkBoxUseLogger.CheckedChanged += new System.EventHandler(this.checkBoxUseLogger_CheckedChanged);
             // 
             // TryoutForm
             // 
@@ -164,6 +202,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "TryoutForm";
             this.Text = "Sharp Logger Tryout";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.TryoutForm_FormClosing);
             this.Load += new System.EventHandler(this.TryoutForm_Load);
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
@@ -185,6 +224,9 @@
         private System.Windows.Forms.TabPage tabPage2;
         private LogControl logControl;
         private System.Windows.Forms.CheckBox checkBoxUseLogger;
+        private System.Windows.Forms.Button button1000;
+        private System.Windows.Forms.Button buttonRefresh100;
+        private System.Windows.Forms.Button buttonRefresh10;
     }
 }
 

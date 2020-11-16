@@ -4,15 +4,13 @@ namespace SharpLogger
 {
     public class Logger : ILogger
     {
-        private readonly string name;
-        private readonly ILogHandler runner;
-        private readonly Func<DateTime> timer;
+        private readonly string source;
+        private readonly ILogHandler handler;
 
-        public Logger(ILogHandler runner, string name = null)
+        public Logger(ILogHandler handler, string source = null)
         {
-            this.timer = timer ?? Now;
-            this.runner = runner;
-            this.name = name;
+            this.handler = handler;
+            this.source = source;
         }
 
         public void Debug(string format, params object[] args)
@@ -42,9 +40,9 @@ namespace SharpLogger
 
         public void Log(string level, string format, params object[] args)
         {
-            runner.Handle(new LogDto
+            handler.Append(new LogDto
             {
-                Source = name,
+                Source = source,
                 Level = level,
                 Message = Format(format, args),
             });
@@ -54,11 +52,6 @@ namespace SharpLogger
         {
             if (args.Length == 0) return format;
             return string.Format(format, args);
-        }
-
-        private DateTime Now()
-        {
-            return DateTime.Now;
         }
     }
 }

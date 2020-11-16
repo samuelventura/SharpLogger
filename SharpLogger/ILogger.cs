@@ -24,7 +24,7 @@ namespace SharpLogger
 
     public interface ILogHandler
     {
-        void Handle(LogDto log);
+        void Append(LogDto log);
     }
 
     public interface ILogConverter<T>

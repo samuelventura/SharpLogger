@@ -51,7 +51,7 @@ namespace SharpLogger
         private static string DumpPath(string id)
         {
             var entry = Assembly.GetEntryAssembly().Location;
-            return Path.ChangeExtension(entry, $"StackTrace.{id}.txt");
+            return Path.ChangeExtension(entry, $"Exception.{id}.txt");
         }
 
         private static string AssyPath()
