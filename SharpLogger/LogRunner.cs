@@ -132,7 +132,6 @@ namespace SharpLogger
             lock (queue)
             {
                 queue.Enqueue(action);
-                Monitor.Pulse(queue);
             }
         }
 
@@ -149,10 +148,6 @@ namespace SharpLogger
 
                 lock (queue)
                 {
-                    if (queue.Count == 0)
-                    {
-                        Monitor.Wait(queue, 0);
-                    }
                     if (queue.Count > 0)
                     {
                         action = queue.Dequeue();

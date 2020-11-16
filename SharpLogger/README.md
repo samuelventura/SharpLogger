@@ -25,7 +25,7 @@
 * Custom row formatting
 * Auto persistible configuration
 * Visual feedback on mouse box selection
-* Copy context menu
+* No copy context menu (control panel instead)
 
 ## Currently Implemented
 

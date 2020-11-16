@@ -52,6 +52,12 @@ namespace SharpLogger
 			set { logPanel.SelectionBack = value; }
 		}
 		[Category("Logging")]
+		public Color SelectingBack
+		{
+			get { return logPanel.SelectingBack; }
+			set { logPanel.SelectingBack = value; }
+		}
+		[Category("Logging")]
 		public Color SelectionFront
 		{
 			get { return logPanel.SelectionFront; }

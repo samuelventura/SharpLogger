@@ -10,10 +10,11 @@ namespace SharpLogger
 		private LogLine[] lines = new LogLine[0];
 		private LogLine lastClicked;
 		private Point captureStart;
-		private Font font;
-		private Pen debug;
+		private Font font = null;
+		private Pen debug = null;
 
-		public Color SelectionBack { get; set; } = Color.DodgerBlue;
+		public Color SelectionBack { get; set; } = Color.SteelBlue;
+		public Color SelectingBack { get; set; } = Color.LightSteelBlue;
 		public Color SelectionFront { get; set; } = Color.White;
 
 		//Monospace font required because MeasureText is expensive
@@ -44,6 +45,7 @@ namespace SharpLogger
 			single.Width /= 2; //returns 14 for asigned font size = 12
 			foreach (var line in lines)
 			{
+				line.Selecting = false;
 				line.Location = new Point(0, scroll.Height);
 				//Expects single text line per log line
 				//Monospace font required because MeasureText is expensive
@@ -58,6 +60,7 @@ namespace SharpLogger
 			VerticalScroll.Value = VerticalScroll.Maximum;
 			HorizontalScroll.Value = 0;
 			lastClicked = null;
+			Capture = false;
 			PerformLayout(); //redraw vertical scroll bar
 			Invalidate(); //relayout does not invalidate
 		}
@@ -90,13 +93,68 @@ namespace SharpLogger
 				if (line.Selected) list.Add(line);
 			}
 			return list.ToArray();
-        }
+		}
+
+		private bool IsShiftDown()
+		{
+			return (Control.ModifierKeys & Keys.Shift) == Keys.Shift;
+		}
+
+		private bool IsControlDown()
+		{
+			return (Control.ModifierKeys & Keys.Control) == Keys.Control;
+		}
+
+		private int ClearSelection()
+		{
+			var count = 0;
+			foreach (var line in lines)
+			{
+				if (line.Selected) count++;
+				line.Selected = false;
+			}
+			return count;
+		}
+
+		private void Intersect(Rectangle selection, Action<LogLine, bool> callback)
+		{
+			foreach (var line in lines)
+			{
+				//struct are copied on assigment
+				var offset = AutoScrollPosition;
+				offset.Offset(line.Location);
+				var rect = new Rectangle(offset, line.Size);
+				//select even from trailing empty space or
+				//unexpected selection pops up on triangle text
+				rect.Width = HorizontalScroll.Maximum;
+				callback(line, rect.IntersectsWith(selection));
+			}
+		}
+
+		private LogLine Contains(Point click)
+		{
+			foreach (var line in lines)
+			{
+				//struct are copied on assigment
+				var offset = AutoScrollPosition;
+				offset.Offset(line.Location);
+				var rect = new Rectangle(offset, line.Size);
+				//needs to click text to select line
+				//rect.Width = HorizontalScroll.Maximum;
+				if (rect.Contains(click))
+				{
+					return line;
+				}
+			}
+			return null;
+		}
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			var client = ClientSize;
 			var offset = AutoScrollPosition;
-			var back = new SolidBrush(SelectionBack);
+			var selection = new SolidBrush(SelectionBack);
+			var selecting = new SolidBrush(SelectingBack);
 			foreach (var line in lines)
 			{
 				var rect = new Rectangle(offset, line.Size);
@@ -105,9 +163,14 @@ namespace SharpLogger
 				if (e.ClipRectangle.IntersectsWith(rect))
 				{
 					var color = line.Color;
-					if (line.Selected)
+					if (Capture && line.Selecting)
                     {
-						e.Graphics.FillRectangle(back, rect);
+						e.Graphics.FillRectangle(selecting, rect);
+						color = SelectionFront;
+					}
+					else if (line.Selected)
+                    {
+						e.Graphics.FillRectangle(selection, rect);
 						color = SelectionFront;
 					}
 					TextRenderer.DrawText(e.Graphics, line.Line, font, offset, color);
@@ -124,7 +187,7 @@ namespace SharpLogger
         {
             base.OnMouseClick(e);
 			if (e.Button != MouseButtons.Left) return;
-			var clicked = FindItem(e.Location);
+			var clicked = Contains(e.Location);
 			var control = IsControlDown();
 			var shift = IsShiftDown();
 			if (clicked != null)
@@ -169,88 +232,42 @@ namespace SharpLogger
 			if (e.Button != MouseButtons.Left) return;
 			Capture = true;
 			captureStart = e.Location;
-        }
+		}
 
-        protected override void OnMouseUp(MouseEventArgs e)
+		protected override void OnMouseMove(MouseEventArgs e)
+		{
+			base.OnMouseDown(e);
+			if (!Capture) return;
+			var rect = new Rectangle(
+				Math.Min(captureStart.X, e.Location.X),
+				Math.Min(captureStart.Y, e.Location.Y),
+				Math.Abs(captureStart.X - e.Location.X),
+				Math.Abs(captureStart.Y - e.Location.Y));
+			Intersect(rect, (line, intersect) => {
+				line.Selecting = intersect;
+			});
+			Invalidate();
+		}
+
+		protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-			if (e.Button != MouseButtons.Left) return;
-			var captured = Capture;
+			if (!Capture) return;
 			Capture = false;
-			var captureEnd = e.Location;
-			if (captured && captureEnd != captureStart)
-			{
-				var control = IsControlDown();
-				if (!control) ClearSelection();
-				var rect = new Rectangle(
-					Math.Min(captureStart.X, captureEnd.X),
-					Math.Min(captureStart.Y, captureEnd.Y),
-					Math.Abs(captureStart.X - captureEnd.X),
-					Math.Abs(captureStart.Y - captureEnd.Y));
-				foreach (var line in FindItems(rect))
-				{
-					line.Selected = true;
-				}
-				Invalidate();
-			}
-		}
-
-		private bool IsShiftDown()
-		{
-			return (Control.ModifierKeys & Keys.Shift) == Keys.Shift;
-		}
-
-		private bool IsControlDown()
-		{
-			return (Control.ModifierKeys & Keys.Control) == Keys.Control;
-		}
-
-		private int ClearSelection()
-        {
-			var count = 0;
-			foreach (var line in lines)
-			{
-				if (line.Selected) count++;
-				line.Selected = false;
-			}
-			return count;
-		}
-
-		private LogLine[] FindItems(Rectangle selection)
-		{
-			var list = new List<LogLine>();
-			foreach (var line in lines)
-			{
-				//struct are copied on assigment
-				var offset = AutoScrollPosition;
-				offset.Offset(line.Location);
-				var rect = new Rectangle(offset, line.Size);
-				//needs to touch text to select item
-				//rect.Width = HorizontalScroll.Maximum;
-				if (rect.IntersectsWith(selection))
-				{
-					list.Add(line);
-				}
-			}
-			return list.ToArray();
-		}
-
-		private LogLine FindItem(Point click)
-        {
-			foreach (var line in lines)
-			{
-				//struct are copied on assigment
-				var offset = AutoScrollPosition;
-				offset.Offset(line.Location);
-				var rect = new Rectangle(offset, line.Size);
-				//needs to click text to select line
-				//rect.Width = HorizontalScroll.Maximum;
-				if (rect.Contains(click))
-                {
-					return line;
-                }
-			}
-			return null;
+			if (e.Button != MouseButtons.Left) return;
+			if (e.Location == captureStart) return;
+			var control = IsControlDown();
+			var rect = new Rectangle(
+				Math.Min(captureStart.X, e.Location.X),
+				Math.Min(captureStart.Y, e.Location.Y),
+				Math.Abs(captureStart.X - e.Location.X),
+				Math.Abs(captureStart.Y - e.Location.Y));
+			Intersect(rect, (line, intersect) => {
+				if (!control) line.Selected = false;
+				if (intersect) line.Selected = true;
+				line.Selecting = false;
+			});
+			Invalidate();
 		}
 	}
 }

@@ -153,7 +153,8 @@
             this.logPanel.FontSize = 12F;
             this.logPanel.Location = new System.Drawing.Point(3, 3);
             this.logPanel.Name = "logPanel";
-            this.logPanel.SelectionBack = System.Drawing.Color.DodgerBlue;
+            this.logPanel.SelectingBack = System.Drawing.Color.LightSteelBlue;
+            this.logPanel.SelectionBack = System.Drawing.Color.SteelBlue;
             this.logPanel.SelectionFront = System.Drawing.Color.White;
             this.logPanel.Size = new System.Drawing.Size(786, 355);
             this.logPanel.TabIndex = 2;
@@ -184,7 +185,7 @@
             this.logControl.LogFormat = "{TS:HH:mm:ss.fff} {MESSAGE}";
             this.logControl.Name = "logControl";
             this.logControl.PollPeriod = 10;
-            this.logControl.SelectionBack = System.Drawing.Color.DodgerBlue;
+            this.logControl.SelectionBack = System.Drawing.Color.SteelBlue;
             this.logControl.SelectionFront = System.Drawing.Color.White;
             this.logControl.ShowDebug = false;
             this.logControl.Size = new System.Drawing.Size(786, 355);

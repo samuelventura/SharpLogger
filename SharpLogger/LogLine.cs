@@ -13,5 +13,6 @@ namespace SharpLogger
         public Size Size { get; set; } = new Size();
         public Color Color { get; set; } = Color.Black;
         public bool Selected { get; set; }
+        public bool Selecting { get; set; }
     }
 }
