@@ -7,9 +7,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("SharpLogger")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("SharpLogger")]
-[assembly: AssemblyCopyright("Copyright © Samuel Ventura 2020")]
+[assembly: AssemblyCompany("samuel.ventura@yeico.com")]
+[assembly: AssemblyCopyright("Copyright © 2020 Samuel Ventura")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
