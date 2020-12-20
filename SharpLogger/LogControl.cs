@@ -184,7 +184,11 @@ namespace SharpLogger
 			if (list.Length == 0) list = logPanel.GetAll();
 			foreach (var line in list)
 			{
-				sb.AppendLine(line.Line);
+				if (line.Partial)
+                {
+					sb.AppendLine(line.Substring);
+				}
+				else sb.AppendLine(line.Line);
 			}
 			Clipboard.SetText(sb.ToString());
 		}

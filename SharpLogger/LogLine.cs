@@ -14,5 +14,10 @@ namespace SharpLogger
         public Color Color { get; set; } = Color.Black;
         public bool Selected { get; set; }
         public bool Selecting { get; set; }
+        public bool Partialing { get; set; }
+        public bool Partial { get; set; }
+        public int Start { get; set; }
+        public int Length { get; set; }
+        public string Substring { get; set; }
     }
 }

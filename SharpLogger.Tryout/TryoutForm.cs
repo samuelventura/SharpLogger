@@ -57,6 +57,11 @@ namespace SharpLogger.Tryout
             throw new Exception($"Invalid index {index}");
         }
 
+        private string StackTrace()
+        {
+            return "Environment.StackTrace\n" + Environment.StackTrace;
+        }
+
         private void SetLines(int count)
         {
             tabControl1.SelectedIndex = 0;
@@ -65,7 +70,7 @@ namespace SharpLogger.Tryout
             {
                 var line = new LogLine();
                 var sb = new StringBuilder();
-                sb.Append($" Line {i}");
+                sb.Append($"Line {i}");
                 for (var j = 0; j < i; j++)
                 {
                     sb.Append($" {j}");
@@ -105,7 +110,7 @@ namespace SharpLogger.Tryout
                     }
                     dto.Message = sb.ToString();
                     dto.Level = ToLevel(i);
-                    if (i % 5 == 2) dto.Message = Environment.StackTrace;
+                    if (i % 5 == 2) dto.Message = StackTrace();
                     if (useLogger) log.Log(dto.Level, dto.Message);
                     else logControl.Append(dto);
                     if (i%10==0) Thread.Sleep(1);
