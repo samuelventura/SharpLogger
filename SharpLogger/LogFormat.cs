@@ -28,7 +28,7 @@ namespace SharpLogger
 
         public string Format { get { return format; } }
 
-        public string Convert(LogDto log)
+        public string ConvertLog(LogDto log)
         {
             var args = new object[] { log.Timestamp, log.ProcessId, log.ThreadName, log.Level, log.Source, log.Message };
             return string.Format(process, args);

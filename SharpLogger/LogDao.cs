@@ -5,16 +5,22 @@ using System.Diagnostics;
 
 namespace SharpLogger
 {
-    public class LogDao : ILogAppender, IDisposable
+    public class LogDao : ILogHandler, ILogAppender, IDisposable
     {
         private readonly StreamWriter writer;
 
         public LogDao(string path = null)
         {
-            writer = File.AppendText(path ?? AssyPath());
+            writer = File.AppendText(path ?? LogPath());
         }
 
-        public void Append(params LogDto[] dtos)
+        public void HandleLog(LogDto dto)
+        {
+            writer.WriteLine(dto.ToString());
+            writer.Flush();
+        }
+
+        public void AppendLog(params LogDto[] dtos)
         {
             foreach(var dto in dtos)
             {
@@ -48,16 +54,20 @@ namespace SharpLogger
             catch (Exception) { }
         }
 
-        private static string DumpPath(string id)
+        private static string LogPath()
         {
-            var entry = Assembly.GetEntryAssembly().Location;
-            return Path.ChangeExtension(entry, $"Exception.{id}.txt");
+            return MakePath("log.txt");
         }
 
-        private static string AssyPath()
+        private static string DumpPath(string id)
+        {
+            return MakePath($"Exception.{id}.txt");
+        }
+
+        public static string MakePath(string extension)
         {
             var entry = Assembly.GetEntryAssembly().Location;
-            return Path.ChangeExtension(entry, "log.txt");
+            return Path.ChangeExtension(entry, extension);
         }
     }
 }

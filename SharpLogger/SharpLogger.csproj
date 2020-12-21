@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LogDebug.cs" />
     <Compile Include="ILogger.cs" />
     <Compile Include="LogDao.cs" />
     <Compile Include="LogDto.cs" />
@@ -56,6 +57,7 @@
     <Compile Include="LogFormat.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="LogLine.cs" />
+    <Compile Include="LogModel.cs" />
     <Compile Include="LogPanel.cs">
       <SubType>Component</SubType>
     </Compile>

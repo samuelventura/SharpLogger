@@ -19,16 +19,23 @@ namespace SharpLogger
 
     public interface ILogAppender
     {
-        void Append(params LogDto[] log);
+        void AppendLog(params LogDto[] log);
     }
 
     public interface ILogHandler
     {
-        void Append(LogDto log);
+        void HandleLog(LogDto log);
     }
 
     public interface ILogConverter<T>
     {
-        T Convert(LogDto log);
+        T ConvertLog(LogDto log);
+    }
+
+    public class NopLogHandler : ILogHandler
+    {
+        public void HandleLog(LogDto log)
+        {
+        }
     }
 }

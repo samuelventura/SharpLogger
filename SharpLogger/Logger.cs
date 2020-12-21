@@ -40,10 +40,10 @@ namespace SharpLogger
 
         public void Log(string level, string format, params object[] args)
         {
-            handler.Append(new LogDto
+            handler.HandleLog(new LogDto
             {
-                Source = source,
                 Level = level,
+                Source = source,
                 Message = Format(format, args),
             });
         }

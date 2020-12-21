@@ -10,3 +10,7 @@
 * Select line range with mouse box
 * Full row selection highlight
 
+## Model data flow
+
+ * Input {LINES, MOUSE, RESIZE}
+ * Output {CARET, SELECTION, VISIBLES}

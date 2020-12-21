@@ -40,7 +40,7 @@ namespace SharpLogger
             }));
         }
 
-        public void Append(LogDto log)
+        public void HandleLog(LogDto log)
         {
             thread.Run(() =>
             {
@@ -72,7 +72,7 @@ namespace SharpLogger
                     {
                         //Should not switch to UI to prevent thread
                         //deathlock when disposing from UI events
-                        rt.Appender.Append(rt.Buffer.ToArray());
+                        rt.Appender.AppendLog(rt.Buffer.ToArray());
                         rt.Buffer.Clear();
                     }
                     catch (Exception ex)

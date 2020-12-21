@@ -132,7 +132,7 @@ namespace SharpLogger
 
 		//Should not switch to UI to prevent thread
 		//deathlock when disposing from UI events
-		public void Append(params LogDto[] dtos)
+		public void AppendLog(params LogDto[] dtos)
 		{
 			lock (queue)
 			{
@@ -143,7 +143,7 @@ namespace SharpLogger
 
 		//Should not switch to UI to prevent thread
 		//deathlock when disposing from UI events
-		public void Append(LogDto dto)
+		public void HandleLog(LogDto dto)
 		{
 			lock (queue)
 			{
@@ -179,18 +179,7 @@ namespace SharpLogger
 
         private void CopyButton_Click(object sender, EventArgs e)
         {
-			var sb = new StringBuilder();
-			var list = logPanel.GetSelected();
-			if (list.Length == 0) list = logPanel.GetAll();
-			foreach (var line in list)
-			{
-				if (line.Partial)
-                {
-					sb.AppendLine(line.Substring);
-				}
-				else sb.AppendLine(line.Line);
-			}
-			Clipboard.SetText(sb.ToString());
+			Clipboard.SetText(logPanel.SelectedText());
 		}
 
 		private void Lines(string text, Action<string> callback)
@@ -233,14 +222,12 @@ namespace SharpLogger
 			{
 				if (debug || dto.Level != LogDto.DEBUG)
 				{
-					var text = formatter.Convert(dto);
+					var text = formatter.ConvertLog(dto);
 					var color = ToColor(dto.Level);
 					Lines(text, (single) => {
 						var line = new LogLine();
-						line.Dto = dto;
 						line.Color = color;
 						line.Line = single;
-						line.Message = text;
 						shown.AddLast(line);
 					});
 					dirty = true;

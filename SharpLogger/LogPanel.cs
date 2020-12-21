@@ -1,350 +1,226 @@
 ﻿using System;
 using System.Drawing;
-using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Text;
 
 namespace SharpLogger
 {
 	public class LogPanel : Panel
 	{
-		private LogLine[] lines = new LogLine[0];
-		private LogLine lastClicked;
-		private Point captureStart;
-		private Font font = null;
-		private Pen debug = null;
-		private Size charSize;
+		private ulong updates;
+		private LogModel.OutputState output;
+		private LogModel.InputState input;
+		private LogModel model;
+		private Brush selection;
+		private Brush selecting;
+		private Font font;
 
+		//design time only
+		public float FontSize { get; set; } = 12;
 		public Color SelectionBack { get; set; } = Color.SteelBlue;
 		public Color SelectingBack { get; set; } = Color.LightSteelBlue;
 		public Color SelectionFront { get; set; } = Color.White;
 
-		//Monospace font required because MeasureText is expensive
-		//Ubiquitous monospace fonts: Consolas, Courier
-		//FontFamily.GenericMonospace creates Courier New
-		public float FontSize { 
-			get { return font.Size; }
-			set { 
-				font = new Font(FontFamily.GenericMonospace, 
-				value, FontStyle.Regular, GraphicsUnit.Pixel);
-				//returns width of an extra character 1=14, 2=21, ...
-				charSize = TextRenderer.MeasureText("-", font);
-				charSize.Width /= 2; //returns 14 for asigned font size = 12
-			}
-		}
-
 		public LogPanel()
 		{
-			//debug = new Pen(Color.Purple);
 			BackColor = Color.Black;
 			DoubleBuffered = true;
 			AutoScroll = true;
-			FontSize = 12;
 		}
 
 		public void SetLines(params LogLine[] lines)
 		{
-			this.lines = lines;
-			var scroll = new Size(0, 0);
-			var index = 0;
-			foreach (var line in lines)
-			{
-				line.Selecting = false;
-				line.Location = new Point(0, scroll.Height);
-				//Expects single text line per log line
-				//Monospace font required because MeasureText is expensive
-				//line.Size = TextRenderer.MeasureText(line.Line, font);
-				line.Size = new Size((line.Line.Length + 1) * charSize.Width, charSize.Height);
-				if (line.Size.Width > scroll.Width) scroll.Width = line.Size.Width;
-				scroll.Height += line.Size.Height;
-				line.Index = index++;
-			}
-			scroll.Height += charSize.Height; //renglon extra
-			AutoScrollMinSize = scroll;
-			VerticalScroll.Value = VerticalScroll.Maximum;
-			HorizontalScroll.Value = 0;
-			lastClicked = null;
-			Capture = false;
-			PerformLayout(); //redraw vertical scroll bar
-			Invalidate(); //relayout does not invalidate
+			LogDebug.WriteLine("LogPanel.SetLines {0}", lines.Length);
+			UpdateModel(() => {
+				input.Lines = new LogModel.Lines(lines);
+			});
 		}
 
-		public int CountSelected()
-		{
-			var count = 0;
-			foreach (var item in lines)
-			{
-				if (item.Selected) count++;
-			}
-			return count;
-		}
-
-		public LogLine[] GetAll()
-		{
-			var list = new List<LogLine>();
-			foreach (var line in lines)
-			{
-				list.Add(line);
-			}
-			return list.ToArray();
-		}
-
-		public LogLine[] GetSelected()
+		public string SelectedText()
         {
-			var list = new List<LogLine>();
-			foreach (var line in lines)
+			InitializeModel();
+			var sb = new StringBuilder();
+			foreach (var line in input.Lines.Array)
 			{
-				if (line.Selected) list.Add(line);
+				sb.AppendLine(line.Line);
 			}
-			return list.ToArray();
+			return sb.ToString();
 		}
 
-		private bool IsShiftDown()
-		{
-			return (Control.ModifierKeys & Keys.Shift) == Keys.Shift;
+        protected override void OnCreateControl()
+        {
+			LogDebug.WriteLine("LogPanel.OnCreateControl");
+			base.OnCreateControl();
+			UpdateModel(() => {
+				input.ViewPort = ViewPort();
+			});
 		}
 
-		private bool IsControlDown()
+        protected override void OnClientSizeChanged(EventArgs e)
 		{
-			return (Control.ModifierKeys & Keys.Control) == Keys.Control;
+			LogDebug.WriteLine("LogPanel.OnClientSizeChanged");
+			base.OnClientSizeChanged(e);
+			UpdateModel(() => {
+				input.ViewPort = ViewPort();
+			});
 		}
 
-		private int ClearSelection()
+		//https://stackoverflow.com/questions/1851620/handling-scroll-event-on-listview-in-c-sharp
+		//no practical way to catch scrolling events
+		protected override void WndProc(ref Message m)
 		{
-			var count = 0;
-			foreach (var line in lines)
+			base.WndProc(ref m);
+			if (m.Msg == 0x115 || m.Msg == 0x114 || m.Msg == 0x020A)
 			{
-				if (line.Selected) count++;
-				line.Selected = false;
+				LogDebug.WriteLine("LogPanel.OnScrollChanged");
+				UpdateModel(() => {
+					input.ViewPort = ViewPort();
+				});
 			}
-			return count;
-		}
-
-		private void Intersect(Rectangle selection, Action<LogLine, bool> callback)
-		{
-			var client = ClientSize;
-			foreach (var line in lines)
-			{
-				var rect = LineRect(line);
-				//select even from trailing empty space or
-				//unexpected selection pops up on triangle text
-				rect.Width = Math.Max(client.Width, HorizontalScroll.Maximum);
-				callback(line, rect.IntersectsWith(selection));
-			}
-		}
-
-		private LogLine Contains(Point click)
-		{
-			foreach (var line in lines)
-			{
-				//needs to click text to select line
-				if (LineRect(line).Contains(click))
-				{
-					return line;
-				}
-			}
-			return null;
-		}
-
-		private Rectangle LineRect(LogLine line)
-		{
-			//structs are copied on assigment
-			var offset = AutoScrollPosition;
-			offset.Offset(line.Location);
-			return new Rectangle(offset, line.Size);
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
-			var client = ClientSize;
-			var selection = new SolidBrush(SelectionBack);
-			var selecting = new SolidBrush(SelectingBack);
-			foreach (var line in lines)
+			LogDebug.WriteLine("LogPanel.OnPaint {0}", ViewPort());
+			foreach (var line in model.Output.Visibles.Array)
 			{
-				var rect = LineRect(line);
-				//draw full row for selected items
-				rect.Width = Math.Max(client.Width, HorizontalScroll.Maximum);
-				//TextRenderer renders leaving width/2 at each side using length+1 spaces
-				if (e.ClipRectangle.IntersectsWith(rect))
-				{
-					if (Capture && line.Selecting)
-                    {
-						if (line.Partialing)
-                        {
-							TextRenderer.DrawText(e.Graphics, line.Line, font, rect.Location, line.Color);
-							rect.X += line.Start * charSize.Width + charSize.Width/2;
-							rect.Width = line.Length * charSize.Width;
-							e.Graphics.FillRectangle(selecting, rect);
-							rect.X -= charSize.Width/2;
-							TextRenderer.DrawText(e.Graphics, line.Substring, font, rect.Location, SelectionFront);
-						}
-						else
-						{
-							e.Graphics.FillRectangle(selecting, rect);
-							TextRenderer.DrawText(e.Graphics, line.Line, font, rect.Location, SelectionFront);
-						}
-					}
-					else if (line.Selected)
-                    {
-						if (line.Partial)
-						{
-							TextRenderer.DrawText(e.Graphics, line.Line, font, rect.Location, line.Color);
-							rect.X += line.Start * charSize.Width + charSize.Width/2;
-							rect.Width = line.Length * charSize.Width;
-							e.Graphics.FillRectangle(selection, rect);
-							rect.X -= charSize.Width/2;
-							TextRenderer.DrawText(e.Graphics, line.Substring, font, rect.Location, SelectionFront);
-						}
-						else
-                        {
-							e.Graphics.FillRectangle(selection, rect);
-							TextRenderer.DrawText(e.Graphics, line.Line, font, rect.Location, SelectionFront);
-						}
-					}
-					else TextRenderer.DrawText(e.Graphics, line.Line, font, rect.Location, line.Color);
-
-					if (debug != null)
-                    {
-						e.Graphics.DrawRectangle(debug, LineRect(line));
-					}
-				}
+				e.Graphics.FillRectangle(Brushes.Black, line.Row);
+				TextRenderer.DrawText(e.Graphics, line.Line, font, line.View, Color.White);
 			}
 		}
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);
-			if (e.Button != MouseButtons.Left) return;
-			var clicked = Contains(e.Location);
-			var control = IsControlDown();
-			var shift = IsShiftDown();
-			if (clicked != null)
+			if (e.Button == MouseButtons.Left)
 			{
-				if (shift && lastClicked != null)
-                {
-					var start = Math.Min(clicked.Index, lastClicked.Index);
-					var end = Math.Max(clicked.Index, lastClicked.Index);
-					for (var i = start; i <= end; i++)
-					{
-						lines[i].Selected = true;
-					}
-				}
-				else if (control)
-                {
-					clicked.Selected = !clicked.Selected;
-				}
-				else
-                {
-					ClearSelection();
-					clicked.Selected = true;
-				}
-				lastClicked = clicked;
-				Invalidate();
-			}
-			else
-			{
-				//ctrl & shift means trying
-				//to add so ignore clear 
-				if (!shift && !control)
-                {
-					lastClicked = null;
-					var count = ClearSelection();
-					if (count > 0) Invalidate();
-				}
+				UpdateModel(() => {
+					model.ProcessMouse("click", e.Location, Shift());
+				});
 			}
 		}
 
-        protected override void OnMouseDown(MouseEventArgs e)
+		protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-			if (e.Button != MouseButtons.Left) return;
-			Capture = true;
-			captureStart = e.Location;
-			Invalidate();
+			if (e.Button == MouseButtons.Left)
+            {
+				Capture = true;
+				UpdateModel(() => {
+					model.ProcessMouse("down", e.Location, Shift());
+				});
+			}
 		}
 
 		protected override void OnMouseMove(MouseEventArgs e)
 		{
 			base.OnMouseDown(e);
-			if (!Capture) return;
-			var control = IsControlDown();
-			var rect = new Rectangle(
-				Math.Min(captureStart.X, e.Location.X),
-				Math.Min(captureStart.Y, e.Location.Y),
-				Math.Abs(captureStart.X - e.Location.X),
-				Math.Abs(captureStart.Y - e.Location.Y));
-			var count = 0;
-			var single = null as LogLine;
-			Intersect(rect, (line, intersect) => {
-				line.Selecting = intersect;
-				if (line.Selecting) single = line;
-				if (line.Selecting) count++;
-				line.Partialing = false;
-			});
-			if (count != 1) single = null;
-			if (control) single = null;
-			if (single != null) Partialing(single, captureStart, e.Location);
-			Invalidate();
+			if (Capture)
+			{
+				UpdateModel(() => {
+					model.ProcessMouse("move", e.Location, Shift());
+				});
+			}
 		}
 
 		protected override void OnMouseUp(MouseEventArgs e)
         {
 			base.OnMouseUp(e);
-			if (e.Button != MouseButtons.Left) return;
-			if (!Capture) return;
-			Capture = false;
-			if (e.Location == captureStart) return;
-			var control = IsControlDown();
-			var rect = new Rectangle(
-				Math.Min(captureStart.X, e.Location.X),
-				Math.Min(captureStart.Y, e.Location.Y),
-				Math.Abs(captureStart.X - e.Location.X),
-				Math.Abs(captureStart.Y - e.Location.Y));
-			var count = 0;
-			var single = null as LogLine;
-			Intersect(rect, (line, intersect) => {
-				if (!control) line.Selected = false;
-				if (intersect) line.Selected = true;
-				line.Partialing = false;
-				line.Selecting = false;
-				if (line.Selected) count++;
-				if (line.Selected) single = line;
-			});
-			if (count != 1) single = null;
-			if (control) single = null;
-			if (single != null) Partial(single, captureStart, e.Location);
-			Invalidate();
+			if (Capture && e.Button != MouseButtons.Left)
+            {
+				Capture = false;
+				UpdateModel(() => {
+					model.ProcessMouse("up", e.Location, Shift());
+				});
+			}
 		}
 
-		private void Partialing(LogLine l, Point p1, Point p2)
+		private Rectangle ViewPort()
 		{
-			l.Partialing = Calculate(l, p1, p2);
+			var offset = AutoScrollPosition;
+			offset.X *= -1;
+			offset.Y *= -1;
+			return new Rectangle(offset, ClientSize);
 		}
 
-		private void Partial(LogLine l, Point p1, Point p2)
+		private void UpdateModel(Action action)
 		{
-			l.Partial = Calculate(l, p1, p2);
+			//reentrant code, ensure local references to fields
+			//reentrant is good to minimize redraws
+			var index = updates++;
+			InitializeModel();
+			action();
+			LogDebug.WriteLine("LogPanel.UpdateModel {0} I:{1}", index, input);
+			model.ProcessInput(input);
+			LogDebug.WriteLine("LogPanel.UpdateModel {0} O:{1}", index, model.Output);
+			var previous = output;
+			var current = new LogModel.OutputState()
+			{
+				Lines = model.Output.Lines,
+				Visibles = model.Output.Visibles,
+				ScrollSize = model.Output.ScrollSize,
+			};
+			if (LogModel.NotEqual(previous, current))
+			{
+				output = current; //cache new output
+				var scrollSizeChanged = LogModel.NotEqual(current.ScrollSize, previous.ScrollSize);
+				var linesChanged = LogModel.NotEqual(current.Lines, previous.Lines);
+				if (scrollSizeChanged)
+                {
+					AutoScrollMinSize = current.ScrollSize;
+					VerticalScroll.Value = VerticalScroll.Maximum;
+					HorizontalScroll.Value = 0;
+					//redraw vertical scroll bar
+					//issues client size change on first call
+					//wont issue scroll event
+					PerformLayout(); 
+					UpdateModel(() => {
+						input.ViewPort = ViewPort();
+					});
+				}
+				else if(linesChanged)
+                {
+					LogDebug.WriteLine("LogPanel.linesChanged");
+					//wont issue scroll event
+					VerticalScroll.Value = VerticalScroll.Maximum;
+					HorizontalScroll.Value = 0;
+					UpdateModel(() => {
+						input.ViewPort = ViewPort();
+					});
+				}
+				Invalidate();
+			}
 		}
 
-		private bool Calculate(LogLine l, Point p1, Point p2)
+		private void InitializeModel()
 		{
-			var s = charSize;
-			var r = LineRect(l);
-			if (p1.Y < r.Top || p1.Y > r.Bottom) return false;
-			if (p2.Y < r.Top || p2.Y > r.Bottom) return false;
-			var x1 = Math.Min(p1.X, p2.X);
-			var x2 = Math.Max(p1.X, p2.X);
-			var d1 = x1 - r.X - s.Width / 2.0;
-			var d2 = x2 - r.X - s.Width / 2.0;
-			var i1 = (int)Math.Floor(d1 / s.Width);
-			var i2 = (int)Math.Floor(d2 / s.Width);
-			var len = l.Line.Length;
-			if (i1 < 0 && i2 < 0) return false;
-			if (i1 >= len && i2 >= len) return false;
-			l.Start = Math.Min(len - 1, Math.Max(0, i1));
-			var end = Math.Min(len - 1, Math.Max(0, i2));
-			l.Length = end - l.Start + 1;
-			l.Substring = l.Line.Substring(l.Start, l.Length);
-			return true;
+			if (model == null)
+			{
+				LogDebug.WriteLine("LogPanel.InitializeModel");
+				model = new LogModel();
+				input = new LogModel.InputState();
+				output = new LogModel.OutputState();
+				selection = new SolidBrush(SelectionBack);
+				selecting = new SolidBrush(SelectingBack);
+				//Monospace font required because MeasureText is expensive
+				//Ubiquitous monospace fonts: Consolas, Courier
+				//FontFamily.GenericMonospace creates Courier New
+				font = new Font(
+					FontFamily.GenericMonospace,
+					FontSize,
+					FontStyle.Regular,
+					GraphicsUnit.Pixel);
+				//returns width of an extra character 1=14, 2=21, ...
+				var cs = TextRenderer.MeasureText("-", font);
+				cs.Width /= 2; //returns 14=2*7 for asigned font size = 12
+				input.CharSize = cs;
+				input.Lines = new LogModel.Lines(new LogLine[0]);
+			}
+		}
+
+		private bool Shift()
+		{
+			return (Control.ModifierKeys & Keys.Shift) == Keys.Shift;
 		}
 	}
 }
