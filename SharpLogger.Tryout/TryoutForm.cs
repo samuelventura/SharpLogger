@@ -18,6 +18,7 @@ namespace SharpLogger.Tryout
 
         public TryoutForm()
         {
+            LogDebug.Enabled = true;
             InitializeComponent();
         }
 
@@ -87,8 +88,7 @@ namespace SharpLogger.Tryout
             dao = new LogDao();
             log = new LogRunner();
             log.AddAppender(dao);
-            //log.AddAppender(logControl);
-            log.Run(() => throw new Exception("Test Exception"));
+            log.AddAppender(logControl);
 
             Task.Run(() => {
                 var i = 0;
@@ -112,7 +112,7 @@ namespace SharpLogger.Tryout
                     dto.Level = ToLevel(i);
                     if (i % 5 == 2) dto.Message = StackTrace();
                     if (useLogger) log.Log(dto.Level, dto.Message);
-                    //else logControl.HandleLog(dto);
+                    else logControl.HandleLog(dto);
                     if (i%10==0) Thread.Sleep(1);
                     i++;
                 }
@@ -127,13 +127,13 @@ namespace SharpLogger.Tryout
         private void button100_Click(object sender, EventArgs e)
         {
             SetLines(100);
-            //logControl.LineLimit = 100;
+            logControl.LineLimit = 100;
         }
 
         private void button1000_Click(object sender, EventArgs e)
         {
             SetLines(1000);
-            //logControl.LineLimit = 1000;
+            logControl.LineLimit = 1000;
         }
 
         private void checkBoxAsyncFeed_CheckedChanged(object sender, EventArgs e)
@@ -151,13 +151,18 @@ namespace SharpLogger.Tryout
         private void buttonRefresh10_Click(object sender, EventArgs e)
         {
             tabControl1.SelectedIndex = 1;
-            //logControl.PollPeriod = 10;
+            logControl.PollPeriod = 10;
         }
 
         private void buttonRefresh100_Click(object sender, EventArgs e)
         {
             tabControl1.SelectedIndex = 1;
-            //logControl.PollPeriod = 100;
+            logControl.PollPeriod = 100;
+        }
+
+        private void buttonException_Click(object sender, EventArgs e)
+        {
+            log.Run(() => throw new Exception("Test Exception"));
         }
     }
 }

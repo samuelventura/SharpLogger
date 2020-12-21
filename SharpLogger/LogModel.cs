@@ -43,8 +43,8 @@ namespace SharpLogger
                         var last = inner.Last;
                         Selection.Selecting = new Region()
                         {
-                            End = caret,
-                            Start = last,
+                            End = Max(caret, last),
+                            Start = Min(caret, last),
                         };
                     }
                     return;
@@ -53,10 +53,11 @@ namespace SharpLogger
                     if (inner.Last != null)
                     {
                         var last = inner.Last;
+                        Selection.Selecting = null;
                         Selection.Selected = new Region()
                         {
-                            End = caret,
-                            Start = last,
+                            End = Max(caret, last),
+                            Start = Min(caret, last),
                         };
                     }
                     return;
@@ -65,10 +66,11 @@ namespace SharpLogger
                     if (inner.Last != null)
                     {
                         var last = inner.Last;
+                        Selection.Selecting = null;
                         Selection.Selected = new Region()
                         {
-                            End = caret,
-                            Start = last,
+                            End = Max(caret, last),
+                            Start = Min(caret, last),
                         };
                     }
                     inner.Last = caret;
@@ -145,6 +147,10 @@ namespace SharpLogger
 
         private Caret FindCaret(Point pointer)
         {
+            var cs = Input.CharSize;
+            var vp = Input.ViewPort;
+            var start = vp.Y / cs.Height;
+            var end = vp.Bottom / cs.Height;
             var line = FindLine(pointer);
             if (line != null)
             {
@@ -156,7 +162,23 @@ namespace SharpLogger
                 return new Caret()
                 {
                     Line = line.Index,
-                    Index = i,
+                    Index = Math.Min(line.Line.Length, Math.Max(i,-1)),
+                };
+            }
+            var visibles = Output.Visibles.Array;
+            if (visibles.Length > 0)
+            {
+                var first = visibles[0];
+                var last = visibles[visibles.Length - 1];
+                if (pointer.Y < 0) return new Caret()
+                {
+                    Line = first.Index,
+                    Index = 0,
+                };
+                if (pointer.Y >= vp.Height) return new Caret()
+                {
+                    Line = last.Index,
+                    Index = last.Line.Length,
                 };
             }
             return new Caret()
@@ -170,9 +192,26 @@ namespace SharpLogger
         {
             foreach (var line in Output.Visibles.Array)
             {
+                pointer.X = line.Row.X; //keep it inside
                 if (line.Row.Contains(pointer)) return line;
             }
             return null;
+        }
+
+        private Caret Min(Caret c1, Caret c2)
+        {
+            if (c1.Line > c2.Line) return c2;
+            if (c1.Line < c2.Line) return c1;
+            if (c1.Index > c2.Index) return c2;
+            return c1;
+        }
+
+        private Caret Max(Caret c1, Caret c2)
+        {
+            if (c1.Line > c2.Line) return c1;
+            if (c1.Line < c2.Line) return c2;
+            if (c1.Index > c2.Index) return c1;
+            return c2;
         }
 
         public static bool NotEqual(object obj1, object obj2)
@@ -186,11 +225,13 @@ namespace SharpLogger
 
         public class Lines
         {
+            private static ulong index;
+            public ulong Index { get; }
             public LogLine[] Array { get; }
-            public Lines(params LogLine[] array) { Array = array; }
+            public Lines(params LogLine[] array) { Array = array; Index = index++; }
             public override string ToString()
             {
-                return $"{Array.Length}:{GetHashCode()}";
+                return $"{Array.Length}:{Index}";
             }
         }
         public class InputState
@@ -233,7 +274,7 @@ namespace SharpLogger
             public int Index;
             public override string ToString()
             {
-                return $"{Line}:{Index}";
+                return $"{{{Line},{Index}}}";
             }
         }
         public class Region
@@ -242,7 +283,7 @@ namespace SharpLogger
             public Caret End;
             public override string ToString()
             {
-                return $"{Start}:{End}";
+                return $"{{{Start},{End}}}";
             }
         }
     }

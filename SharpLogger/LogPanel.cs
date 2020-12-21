@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Text;
@@ -7,18 +9,28 @@ namespace SharpLogger
 {
 	public class LogPanel : Panel
 	{
+		private ulong moves;
+		private Point click;
 		private ulong updates;
+		private bool executing;
+		private Queue<Action> actions;
+		private LogModel.SelectionState select;
 		private LogModel.OutputState output;
 		private LogModel.InputState input;
+		private Brush selectionBrush;
+		private Brush selectingBrush;
 		private LogModel model;
-		private Brush selection;
-		private Brush selecting;
+		private Color color;
 		private Font font;
 
 		//design time only
+		[Category("Logging")]
 		public float FontSize { get; set; } = 12;
+		[Category("Logging")]
 		public Color SelectionBack { get; set; } = Color.SteelBlue;
+		[Category("Logging")]
 		public Color SelectingBack { get; set; } = Color.LightSteelBlue;
+		[Category("Logging")]
 		public Color SelectionFront { get; set; } = Color.White;
 
 		public LogPanel()
@@ -31,15 +43,25 @@ namespace SharpLogger
 		public void SetLines(params LogLine[] lines)
 		{
 			LogDebug.WriteLine("LogPanel.SetLines {0}", lines.Length);
-			UpdateModel(() => {
-				input.Lines = new LogModel.Lines(lines);
-			});
+			QueueInputChange(() => { input.Lines = new LogModel.Lines(lines); });
 		}
 
 		public string SelectedText()
         {
 			InitializeModel();
 			var sb = new StringBuilder();
+			var sd = model.Selection.Selected;
+			if (sd != null)
+            {
+				foreach (var line in input.Lines.Array)
+				{
+					VisitSelection(sd, line, (start, length) => {
+						if (sb.Length > 0) sb.AppendLine();
+						sb.Append(line.Line.Substring(start, length));
+					});
+				}
+				if (sb.Length > 0) return sb.ToString();
+			}
 			foreach (var line in input.Lines.Array)
 			{
 				sb.AppendLine(line.Line);
@@ -47,22 +69,73 @@ namespace SharpLogger
 			return sb.ToString();
 		}
 
-        protected override void OnCreateControl()
+		protected override void OnPaint(PaintEventArgs e)
+		{
+			LogDebug.WriteLine("LogPanel.OnPaint {0}", ViewPort());
+			var si = model.Selection.Selecting;
+			var sd = model.Selection.Selected;
+			var cs = model.Input.CharSize;
+			foreach (var line in model.Output.Visibles.Array)
+			{
+				TextRenderer.DrawText(e.Graphics, line.Line, font, line.View, line.Color);
+				if (sd != null) Render(e.Graphics, sd, line, selectionBrush, cs);
+				if (si != null) Render(e.Graphics, si, line, selectingBrush, cs);
+			}
+		}
+
+		private void Render(Graphics g, LogModel.Region r, LogLine l, Brush b, Size cs)
+        {
+			VisitSelection(r, l, (start, length) => {
+				var v = l.View;
+				v.X += start * cs.Width + cs.Width / 2;
+				v.Width = length * cs.Width;
+				g.FillRectangle(b, v);
+				v.X -= cs.Width / 2;
+				var ss = l.Line.Substring(start, length);
+				TextRenderer.DrawText(g, ss, font, v.Location, color);
+			});
+		}
+
+		private void VisitSelection(LogModel.Region r, LogLine l, Action<int, int> callback)
+		{
+			if (l.Index < r.Start.Line) return;
+			if (l.Index > r.End.Line) return;
+			var start = 0;
+			var length = l.Line.Length;
+			if (l.Index == r.Start.Line && l.Index == r.End.Line)
+			{
+				if (r.Start.Index < 0 && r.End.Index < 0) return;
+				if (r.Start.Index >= l.Line.Length && r.End.Index >= l.Line.Length) return;
+				start = Math.Max(0, r.Start.Index);
+				length = Math.Min(l.Line.Length - 1, r.End.Index) - start + 1;
+			}
+			else if (l.Index == r.Start.Line)
+			{
+				if (r.Start.Index >= l.Line.Length) return;
+				start = Math.Max(0, r.Start.Index);
+				length = l.Line.Length - start;
+			}
+			else if (l.Index == r.End.Line)
+			{
+				if (r.End.Index < 0) return;
+				start = 0;
+				length = Math.Min(l.Line.Length - 1, r.End.Index) + 1;
+			}
+			callback(start, length);
+		}
+
+		protected override void OnCreateControl()
         {
 			LogDebug.WriteLine("LogPanel.OnCreateControl");
 			base.OnCreateControl();
-			UpdateModel(() => {
-				input.ViewPort = ViewPort();
-			});
+			QueueInputChange(() => { input.ViewPort = ViewPort(); });
 		}
 
         protected override void OnClientSizeChanged(EventArgs e)
 		{
 			LogDebug.WriteLine("LogPanel.OnClientSizeChanged");
 			base.OnClientSizeChanged(e);
-			UpdateModel(() => {
-				input.ViewPort = ViewPort();
-			});
+			QueueInputChange(() => { input.ViewPort = ViewPort(); });
 		}
 
 		//https://stackoverflow.com/questions/1851620/handling-scroll-event-on-listview-in-c-sharp
@@ -73,86 +146,98 @@ namespace SharpLogger
 			if (m.Msg == 0x115 || m.Msg == 0x114 || m.Msg == 0x020A)
 			{
 				LogDebug.WriteLine("LogPanel.OnScrollChanged");
-				UpdateModel(() => {
-					input.ViewPort = ViewPort();
-				});
-			}
-		}
-
-		protected override void OnPaint(PaintEventArgs e)
-		{
-			LogDebug.WriteLine("LogPanel.OnPaint {0}", ViewPort());
-			foreach (var line in model.Output.Visibles.Array)
-			{
-				e.Graphics.FillRectangle(Brushes.Black, line.Row);
-				TextRenderer.DrawText(e.Graphics, line.Line, font, line.View, Color.White);
-			}
-		}
-
-        protected override void OnMouseClick(MouseEventArgs e)
-        {
-            base.OnMouseClick(e);
-			if (e.Button == MouseButtons.Left)
-			{
-				UpdateModel(() => {
-					model.ProcessMouse("click", e.Location, Shift());
-				});
+				QueueInputChange(() => { input.ViewPort = ViewPort(); });
 			}
 		}
 
 		protected override void OnMouseDown(MouseEventArgs e)
         {
-            base.OnMouseDown(e);
+            //base.OnMouseDown(e); //prevent click event
 			if (e.Button == MouseButtons.Left)
             {
 				Capture = true;
-				UpdateModel(() => {
-					model.ProcessMouse("down", e.Location, Shift());
-				});
+				moves = 0;
+				click = e.Location;
+				ExecuteMouseChange(() => { model.ProcessMouse("down", e.Location, Shift()); });
 			}
 		}
 
 		protected override void OnMouseMove(MouseEventArgs e)
 		{
-			base.OnMouseDown(e);
-			if (Capture)
+			//base.OnMouseDown(e); //prevent click event
+			if (Capture && e.Button == MouseButtons.Left)
 			{
-				UpdateModel(() => {
-					model.ProcessMouse("move", e.Location, Shift());
-				});
+				moves++;
+				ExecuteMouseChange(() => { model.ProcessMouse("move", e.Location, Shift()); });
+				var cs = model.Input.CharSize;
+				var vp = model.Input.ViewPort;
+				if (e.Location.Y < 0)
+                {
+					VerticalScroll.Value = Math.Max(VerticalScroll.Minimum, VerticalScroll.Value - cs.Height);
+					QueueInputChange(() => { input.ViewPort = ViewPort(); });
+				}
+				if (e.Location.Y > vp.Height)
+				{
+					VerticalScroll.Value = Math.Min(VerticalScroll.Maximum, VerticalScroll.Value + cs.Height);
+					QueueInputChange(() => { input.ViewPort = ViewPort(); });
+				}
 			}
 		}
 
 		protected override void OnMouseUp(MouseEventArgs e)
         {
-			base.OnMouseUp(e);
-			if (Capture && e.Button != MouseButtons.Left)
+			//base.OnMouseDown(e); //prevent click event
+			if (Capture && e.Button == MouseButtons.Left)
             {
 				Capture = false;
-				UpdateModel(() => {
-					model.ProcessMouse("up", e.Location, Shift());
-				});
+				//1 move event generated if when not moving the mouse
+				var isClick = moves<=1 && click==e.Location;
+				if (isClick) ExecuteMouseChange(() => { model.ProcessMouse("click", e.Location, Shift()); });
+				else ExecuteMouseChange(() => { model.ProcessMouse("up", e.Location, Shift()); });
 			}
 		}
 
-		private Rectangle ViewPort()
+		private void ExecuteMouseChange(Action action)
 		{
-			var offset = AutoScrollPosition;
-			offset.X *= -1;
-			offset.Y *= -1;
-			return new Rectangle(offset, ClientSize);
+			//received: down, move, click, up
+			InitializeModel();
+			updates++;
+			action();
+			LogDebug.WriteLine("LogPanel.ExecuteMouseChange {0} S:{1}", updates, model.Selection);
+			var previous = select;
+			var current = new LogModel.SelectionState()
+			{
+				Caret = model.Selection.Caret,
+				Selected = model.Selection.Selected,
+				Selecting = model.Selection.Selecting,
+			};
+			if (LogModel.NotEqual(previous, current))
+			{
+				select = current;
+				Invalidate();
+			}
 		}
 
-		private void UpdateModel(Action action)
+		private void QueueInputChange(Action action)
 		{
-			//reentrant code, ensure local references to fields
-			//reentrant is good to minimize redraws
-			var index = updates++;
 			InitializeModel();
+			actions.Enqueue(action);
+			if (!executing)
+            {
+				executing = true;
+				while (actions.Count > 0) ExecuteInputChange(actions.Dequeue());
+				executing = false;
+			}
+		}
+
+		private void ExecuteInputChange(Action action)
+		{
+			updates++;
 			action();
-			LogDebug.WriteLine("LogPanel.UpdateModel {0} I:{1}", index, input);
+			LogDebug.WriteLine("LogPanel.ExecuteInputChange {0} I:{1}", updates, input);
 			model.ProcessInput(input);
-			LogDebug.WriteLine("LogPanel.UpdateModel {0} O:{1}", index, model.Output);
+			LogDebug.WriteLine("LogPanel.ExecuteInputChange {0} O:{1}", updates, model.Output);
+			LogDebug.WriteLine("LogPanel.ExecuteInputChange {0} S:{1}", updates, model.Selection);
 			var previous = output;
 			var current = new LogModel.OutputState()
 			{
@@ -166,27 +251,25 @@ namespace SharpLogger
 				var scrollSizeChanged = LogModel.NotEqual(current.ScrollSize, previous.ScrollSize);
 				var linesChanged = LogModel.NotEqual(current.Lines, previous.Lines);
 				if (scrollSizeChanged)
-                {
+				{
+					LogDebug.WriteLine("LogPanel.scrollSizeChanged");
 					AutoScrollMinSize = current.ScrollSize;
 					VerticalScroll.Value = VerticalScroll.Maximum;
 					HorizontalScroll.Value = 0;
 					//redraw vertical scroll bar
 					//issues client size change on first call
 					//wont issue scroll event
-					PerformLayout(); 
-					UpdateModel(() => {
-						input.ViewPort = ViewPort();
-					});
+					PerformLayout();
+					QueueInputChange(() => { input.ViewPort = ViewPort(); });
 				}
-				else if(linesChanged)
-                {
+				else if (linesChanged)
+				{
 					LogDebug.WriteLine("LogPanel.linesChanged");
 					//wont issue scroll event
 					VerticalScroll.Value = VerticalScroll.Maximum;
 					HorizontalScroll.Value = 0;
-					UpdateModel(() => {
-						input.ViewPort = ViewPort();
-					});
+					PerformLayout();
+					QueueInputChange(() => { input.ViewPort = ViewPort(); });
 				}
 				Invalidate();
 			}
@@ -200,8 +283,10 @@ namespace SharpLogger
 				model = new LogModel();
 				input = new LogModel.InputState();
 				output = new LogModel.OutputState();
-				selection = new SolidBrush(SelectionBack);
-				selecting = new SolidBrush(SelectingBack);
+				selectionBrush = new SolidBrush(SelectionBack);
+				selectingBrush = new SolidBrush(SelectingBack);
+				color = SelectionFront;
+				actions = new Queue<Action>();
 				//Monospace font required because MeasureText is expensive
 				//Ubiquitous monospace fonts: Consolas, Courier
 				//FontFamily.GenericMonospace creates Courier New
@@ -216,6 +301,14 @@ namespace SharpLogger
 				input.CharSize = cs;
 				input.Lines = new LogModel.Lines(new LogLine[0]);
 			}
+		}
+
+		private Rectangle ViewPort()
+		{
+			var offset = AutoScrollPosition;
+			offset.X *= -1;
+			offset.Y *= -1;
+			return new Rectangle(offset, ClientSize);
 		}
 
 		private bool Shift()

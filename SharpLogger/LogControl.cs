@@ -179,7 +179,13 @@ namespace SharpLogger
 
         private void CopyButton_Click(object sender, EventArgs e)
         {
-			Clipboard.SetText(logPanel.SelectedText());
+			Clipboard.Clear();
+			var selectedText = logPanel.SelectedText();
+			if (!string.IsNullOrEmpty(selectedText))
+            {
+				//throws even on empty strings
+				Clipboard.SetText(selectedText);
+			}
 		}
 
 		private void Lines(string text, Action<string> callback)

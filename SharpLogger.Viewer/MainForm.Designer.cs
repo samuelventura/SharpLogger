@@ -38,7 +38,7 @@
             // 
             this.statusStrip.Location = new System.Drawing.Point(0, 428);
             this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(800, 22);
+            this.statusStrip.Size = new System.Drawing.Size(1063, 22);
             this.statusStrip.TabIndex = 0;
             this.statusStrip.Text = "statusStrip";
             // 
@@ -46,25 +46,30 @@
             // 
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(800, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1063, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip";
             // 
             // logPanel
             // 
             this.logPanel.AutoScroll = true;
+            this.logPanel.AutoScrollMinSize = new System.Drawing.Size(0, 15);
             this.logPanel.BackColor = System.Drawing.Color.Black;
             this.logPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.logPanel.FontSize = 12F;
             this.logPanel.Location = new System.Drawing.Point(0, 25);
             this.logPanel.Name = "logPanel";
-            this.logPanel.Size = new System.Drawing.Size(800, 403);
+            this.logPanel.SelectingBack = System.Drawing.Color.LightSteelBlue;
+            this.logPanel.SelectionBack = System.Drawing.Color.SteelBlue;
+            this.logPanel.SelectionFront = System.Drawing.Color.White;
+            this.logPanel.Size = new System.Drawing.Size(1063, 403);
             this.logPanel.TabIndex = 2;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(1063, 450);
             this.Controls.Add(this.logPanel);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.statusStrip);

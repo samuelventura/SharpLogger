@@ -40,13 +40,17 @@
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.logPanel = new SharpLogger.LogPanel();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.logControl = new SharpLogger.LogControl();
+            this.buttonException = new System.Windows.Forms.Button();
             this.panelTop.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
+            this.tabPage2.SuspendLayout();
             this.SuspendLayout();
             // 
             // panelTop
             // 
+            this.panelTop.Controls.Add(this.buttonException);
             this.panelTop.Controls.Add(this.buttonRefresh100);
             this.panelTop.Controls.Add(this.buttonRefresh10);
             this.panelTop.Controls.Add(this.button1000);
@@ -160,6 +164,7 @@
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.logControl);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
@@ -167,6 +172,40 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "LogControl";
             this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // logControl
+            // 
+            this.logControl.AutoScroll = true;
+            this.logControl.DebugColor = System.Drawing.Color.Gray;
+            this.logControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.logControl.ErrorColor = System.Drawing.Color.Tomato;
+            this.logControl.FontSize = 12F;
+            this.logControl.FreezeView = false;
+            this.logControl.InfoColor = System.Drawing.Color.White;
+            this.logControl.LineLimit = 1000;
+            this.logControl.Location = new System.Drawing.Point(3, 3);
+            this.logControl.LogBackColor = System.Drawing.Color.Black;
+            this.logControl.LogFormat = "{TS:HH:mm:ss.fff} {MESSAGE}";
+            this.logControl.Name = "logControl";
+            this.logControl.PollPeriod = 100;
+            this.logControl.SelectingBack = System.Drawing.Color.LightSteelBlue;
+            this.logControl.SelectionBack = System.Drawing.Color.DodgerBlue;
+            this.logControl.SelectionFront = System.Drawing.Color.White;
+            this.logControl.ShowDebug = false;
+            this.logControl.Size = new System.Drawing.Size(786, 355);
+            this.logControl.SuccessColor = System.Drawing.Color.PaleGreen;
+            this.logControl.TabIndex = 0;
+            this.logControl.WarnColor = System.Drawing.Color.Yellow;
+            // 
+            // buttonException
+            // 
+            this.buttonException.Location = new System.Drawing.Point(643, 12);
+            this.buttonException.Name = "buttonException";
+            this.buttonException.Size = new System.Drawing.Size(108, 39);
+            this.buttonException.TabIndex = 7;
+            this.buttonException.Text = "Exception";
+            this.buttonException.UseVisualStyleBackColor = true;
+            this.buttonException.Click += new System.EventHandler(this.buttonException_Click);
             // 
             // TryoutForm
             // 
@@ -184,6 +223,7 @@
             this.panelTop.PerformLayout();
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
+            this.tabPage2.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -201,6 +241,8 @@
         private System.Windows.Forms.Button button1000;
         private System.Windows.Forms.Button buttonRefresh100;
         private System.Windows.Forms.Button buttonRefresh10;
+        private LogControl logControl;
+        private System.Windows.Forms.Button buttonException;
     }
 }
 
