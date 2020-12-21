@@ -15,15 +15,18 @@ namespace SharpLogger
         {
             if (Enabled) 
             {
-                if (IsDesignMode())
-                {
-                    logger = new Logger(new NopLogHandler(), typeof(LogDebug).Name);
-                }
                 if (logger == null)
                 {
-                    var path = LogDao.MakePath("debug.txt");
-                    var dao = new LogDao(path);
-                    logger = new Logger(dao, typeof(LogDebug).Name);
+                    if (IsDesignMode())
+                    {
+                        logger = new Logger(new NopLogHandler(), typeof(LogDebug).Name);
+                    }
+                    else
+                    {
+                        var path = LogFile.MakePath("debug.txt");
+                        var dao = new LogFile(path);
+                        logger = new Logger(dao, typeof(LogDebug).Name);
+                    }
                 }
                 logger.Debug(format, args);
             }

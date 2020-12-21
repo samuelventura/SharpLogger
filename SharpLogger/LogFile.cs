@@ -5,11 +5,11 @@ using System.Diagnostics;
 
 namespace SharpLogger
 {
-    public class LogDao : ILogHandler, ILogAppender, IDisposable
+    public class LogFile : ILogHandler, ILogAppender, IDisposable
     {
         private readonly StreamWriter writer;
 
-        public LogDao(string path = null)
+        public LogFile(string path = null)
         {
             writer = File.AppendText(path ?? LogPath());
         }

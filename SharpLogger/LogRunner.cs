@@ -137,7 +137,7 @@ namespace SharpLogger
 
         public void Dump(Exception ex)
         {
-            LogDao.Dump(typeof(LogRunner).Name, ex);
+            LogFile.Dump(typeof(LogRunner).Name, ex);
         }
 
         private void Loop()

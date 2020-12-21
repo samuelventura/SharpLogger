@@ -11,7 +11,6 @@ namespace SharpLogger.Tryout
     public partial class TryoutForm : Form
     {
         private LogRunner log;
-        private LogDao dao;
 
         private volatile bool asyncFeed;
         private volatile bool useLogger;
@@ -85,9 +84,8 @@ namespace SharpLogger.Tryout
 
         private void TryoutForm_Load(object sender, EventArgs e)
         {
-            dao = new LogDao();
             log = new LogRunner();
-            log.AddAppender(dao);
+            log.AddAppender(new LogFile());
             log.AddAppender(logControl);
 
             Task.Run(() => {
