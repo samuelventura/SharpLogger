@@ -10,6 +10,8 @@
 ## FIXME
 
 * Check touch screen scrolling
-* Separated UI package
 * Nuget publishing
 * Support .NET Core
+* Database appender
+* Viewer concept
+

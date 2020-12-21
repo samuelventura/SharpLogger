@@ -87,13 +87,17 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharpLogger.UI\SharpLogger.UI.csproj">
+      <Project>{a56ab1d1-eef2-4bfe-9ef1-f1df3f0b5a9f}</Project>
+      <Name>SharpLogger.UI</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SharpLogger\SharpLogger.csproj">
       <Project>{075bda0b-de47-40ea-8b4a-e2c462d04640}</Project>
       <Name>SharpLogger</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

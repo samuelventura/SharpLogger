@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpLogger.Viewer", "Sharp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpLogger.Tryout", "SharpLogger.Tryout\SharpLogger.Tryout.csproj", "{1AB9B49B-E206-417A-80C6-CB56C906342B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpLogger.UI", "SharpLogger.UI\SharpLogger.UI.csproj", "{A56AB1D1-EEF2-4BFE-9EF1-F1DF3F0B5A9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{1AB9B49B-E206-417A-80C6-CB56C906342B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AB9B49B-E206-417A-80C6-CB56C906342B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AB9B49B-E206-417A-80C6-CB56C906342B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A56AB1D1-EEF2-4BFE-9EF1-F1DF3F0B5A9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A56AB1D1-EEF2-4BFE-9EF1-F1DF3F0B5A9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A56AB1D1-EEF2-4BFE-9EF1-F1DF3F0B5A9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A56AB1D1-EEF2-4BFE-9EF1-F1DF3F0B5A9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
