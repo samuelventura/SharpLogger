@@ -14,9 +14,12 @@ namespace SharpLogger.Tryout
 
         private volatile bool asyncFeed;
         private volatile bool useLogger;
+        private LogControl logControl;
+        private bool dual;
 
         public TryoutForm()
         {
+            dual = true;
             LogDebug.Enabled = true;
             InitializeComponent();
         }
@@ -64,7 +67,7 @@ namespace SharpLogger.Tryout
 
         private void SetLines(int count)
         {
-            tabControl1.SelectedIndex = 0;
+            tabControl.SelectedIndex = 0;
             var list = new List<LogLine>();
             for (var i = 0; i < count; i++)
             {
@@ -86,7 +89,13 @@ namespace SharpLogger.Tryout
         {
             log = new LogRunner();
             log.AddAppender(new LogFile());
-            log.AddAppender(logControl);
+            if (dual)
+            {
+                logControl = new LogControl();
+                logControl.Dock = DockStyle.Fill;
+                tabControl.TabPages[1].Controls.Add(logControl);
+                log.AddAppender(logControl);
+            }
 
             Task.Run(() => {
                 var i = 0;
@@ -110,7 +119,7 @@ namespace SharpLogger.Tryout
                     dto.Level = ToLevel(i);
                     if (i % 5 == 2) dto.Message = StackTrace();
                     if (useLogger) log.Log(dto.Level, dto.Message);
-                    else logControl.HandleLog(dto);
+                    else if (dual) logControl.HandleLog(dto);
                     if (i%10==0) Thread.Sleep(1);
                     i++;
                 }
@@ -125,37 +134,43 @@ namespace SharpLogger.Tryout
         private void button100_Click(object sender, EventArgs e)
         {
             SetLines(100);
-            logControl.LineLimit = 100;
+            if (dual) logControl.LineLimit = 100;
         }
 
         private void button1000_Click(object sender, EventArgs e)
         {
             SetLines(1000);
-            logControl.LineLimit = 1000;
+            if (dual) logControl.LineLimit = 1000;
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            SetLines(10);
+            if (dual) logControl.LineLimit = 10;
         }
 
         private void checkBoxAsyncFeed_CheckedChanged(object sender, EventArgs e)
         {
-            tabControl1.SelectedIndex = 1;
+            tabControl.SelectedIndex = 1;
             asyncFeed = checkBoxAsyncFeed.Checked;
         }
 
         private void checkBoxUseLogger_CheckedChanged(object sender, EventArgs e)
         {
-            tabControl1.SelectedIndex = 1;
+            tabControl.SelectedIndex = 1;
             useLogger = checkBoxUseLogger.Checked;
         }
 
         private void buttonRefresh10_Click(object sender, EventArgs e)
         {
-            tabControl1.SelectedIndex = 1;
-            logControl.PollPeriod = 10;
+            tabControl.SelectedIndex = 1;
+            if (dual) logControl.PollPeriod = 10;
         }
 
         private void buttonRefresh100_Click(object sender, EventArgs e)
         {
-            tabControl1.SelectedIndex = 1;
-            logControl.PollPeriod = 100;
+            tabControl.SelectedIndex = 1;
+            if (dual) logControl.PollPeriod = 100;
         }
 
         private void buttonException_Click(object sender, EventArgs e)

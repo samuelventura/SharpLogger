@@ -110,6 +110,7 @@ namespace SharpLogger
         private readonly Thread thread;
         private readonly Action idle;
         private Queue<Action> queue;
+        private volatile bool disposed;
 
         public LogThread(Action callback)
         {
@@ -123,7 +124,7 @@ namespace SharpLogger
 
         public void Dispose(Action action)
         {
-            Run(() => { queue = null; action(); });
+            Run(() => { disposed = true; action(); });
             thread.Join();
         }
 
@@ -142,7 +143,7 @@ namespace SharpLogger
 
         private void Loop()
         {
-            while (queue != null)
+            while (!disposed)
             {
                 var action = idle;
 

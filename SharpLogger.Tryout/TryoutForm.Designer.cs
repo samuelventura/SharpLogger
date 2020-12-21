@@ -30,26 +30,26 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TryoutForm));
             this.panelTop = new System.Windows.Forms.Panel();
+            this.button10 = new System.Windows.Forms.Button();
+            this.buttonException = new System.Windows.Forms.Button();
             this.buttonRefresh100 = new System.Windows.Forms.Button();
             this.buttonRefresh10 = new System.Windows.Forms.Button();
             this.button1000 = new System.Windows.Forms.Button();
             this.checkBoxUseLogger = new System.Windows.Forms.CheckBox();
             this.checkBoxAsyncFeed = new System.Windows.Forms.CheckBox();
             this.button100 = new System.Windows.Forms.Button();
-            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabControl = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.logPanel = new SharpLogger.LogPanel();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.logControl = new SharpLogger.LogControl();
-            this.buttonException = new System.Windows.Forms.Button();
             this.panelTop.SuspendLayout();
-            this.tabControl1.SuspendLayout();
+            this.tabControl.SuspendLayout();
             this.tabPage1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
             this.SuspendLayout();
             // 
             // panelTop
             // 
+            this.panelTop.Controls.Add(this.button10);
             this.panelTop.Controls.Add(this.buttonException);
             this.panelTop.Controls.Add(this.buttonRefresh100);
             this.panelTop.Controls.Add(this.buttonRefresh10);
@@ -63,9 +63,29 @@
             this.panelTop.Size = new System.Drawing.Size(800, 63);
             this.panelTop.TabIndex = 0;
             // 
+            // button10
+            // 
+            this.button10.Location = new System.Drawing.Point(177, 12);
+            this.button10.Name = "button10";
+            this.button10.Size = new System.Drawing.Size(79, 39);
+            this.button10.TabIndex = 2;
+            this.button10.Text = "10 Logs";
+            this.button10.UseVisualStyleBackColor = true;
+            this.button10.Click += new System.EventHandler(this.button10_Click);
+            // 
+            // buttonException
+            // 
+            this.buttonException.Location = new System.Drawing.Point(680, 12);
+            this.buttonException.Name = "buttonException";
+            this.buttonException.Size = new System.Drawing.Size(108, 39);
+            this.buttonException.TabIndex = 7;
+            this.buttonException.Text = "Exception";
+            this.buttonException.UseVisualStyleBackColor = true;
+            this.buttonException.Click += new System.EventHandler(this.buttonException_Click);
+            // 
             // buttonRefresh100
             // 
-            this.buttonRefresh100.Location = new System.Drawing.Point(529, 12);
+            this.buttonRefresh100.Location = new System.Drawing.Point(566, 12);
             this.buttonRefresh100.Name = "buttonRefresh100";
             this.buttonRefresh100.Size = new System.Drawing.Size(108, 39);
             this.buttonRefresh100.TabIndex = 6;
@@ -75,7 +95,7 @@
             // 
             // buttonRefresh10
             // 
-            this.buttonRefresh10.Location = new System.Drawing.Point(415, 12);
+            this.buttonRefresh10.Location = new System.Drawing.Point(452, 12);
             this.buttonRefresh10.Name = "buttonRefresh10";
             this.buttonRefresh10.Size = new System.Drawing.Size(108, 39);
             this.buttonRefresh10.TabIndex = 5;
@@ -85,10 +105,10 @@
             // 
             // button1000
             // 
-            this.button1000.Location = new System.Drawing.Point(126, 12);
+            this.button1000.Location = new System.Drawing.Point(12, 12);
             this.button1000.Name = "button1000";
-            this.button1000.Size = new System.Drawing.Size(108, 39);
-            this.button1000.TabIndex = 4;
+            this.button1000.Size = new System.Drawing.Size(74, 39);
+            this.button1000.TabIndex = 0;
             this.button1000.Text = "1000 Logs";
             this.button1000.UseVisualStyleBackColor = true;
             this.button1000.Click += new System.EventHandler(this.button1000_Click);
@@ -96,10 +116,10 @@
             // checkBoxUseLogger
             // 
             this.checkBoxUseLogger.AutoSize = true;
-            this.checkBoxUseLogger.Location = new System.Drawing.Point(328, 24);
+            this.checkBoxUseLogger.Location = new System.Drawing.Point(365, 24);
             this.checkBoxUseLogger.Name = "checkBoxUseLogger";
             this.checkBoxUseLogger.Size = new System.Drawing.Size(81, 17);
-            this.checkBoxUseLogger.TabIndex = 3;
+            this.checkBoxUseLogger.TabIndex = 4;
             this.checkBoxUseLogger.Text = "Use Logger";
             this.checkBoxUseLogger.UseVisualStyleBackColor = true;
             this.checkBoxUseLogger.CheckedChanged += new System.EventHandler(this.checkBoxUseLogger_CheckedChanged);
@@ -107,34 +127,34 @@
             // checkBoxAsyncFeed
             // 
             this.checkBoxAsyncFeed.AutoSize = true;
-            this.checkBoxAsyncFeed.Location = new System.Drawing.Point(240, 24);
+            this.checkBoxAsyncFeed.Location = new System.Drawing.Point(277, 24);
             this.checkBoxAsyncFeed.Name = "checkBoxAsyncFeed";
             this.checkBoxAsyncFeed.Size = new System.Drawing.Size(82, 17);
-            this.checkBoxAsyncFeed.TabIndex = 2;
+            this.checkBoxAsyncFeed.TabIndex = 3;
             this.checkBoxAsyncFeed.Text = "Async Feed";
             this.checkBoxAsyncFeed.UseVisualStyleBackColor = true;
             this.checkBoxAsyncFeed.CheckedChanged += new System.EventHandler(this.checkBoxAsyncFeed_CheckedChanged);
             // 
             // button100
             // 
-            this.button100.Location = new System.Drawing.Point(12, 12);
+            this.button100.Location = new System.Drawing.Point(92, 12);
             this.button100.Name = "button100";
-            this.button100.Size = new System.Drawing.Size(108, 39);
+            this.button100.Size = new System.Drawing.Size(79, 39);
             this.button100.TabIndex = 1;
             this.button100.Text = "100 Logs";
             this.button100.UseVisualStyleBackColor = true;
             this.button100.Click += new System.EventHandler(this.button100_Click);
             // 
-            // tabControl1
+            // tabControl
             // 
-            this.tabControl1.Controls.Add(this.tabPage1);
-            this.tabControl1.Controls.Add(this.tabPage2);
-            this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl1.Location = new System.Drawing.Point(0, 63);
-            this.tabControl1.Name = "tabControl1";
-            this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(800, 387);
-            this.tabControl1.TabIndex = 1;
+            this.tabControl.Controls.Add(this.tabPage1);
+            this.tabControl.Controls.Add(this.tabPage2);
+            this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControl.Location = new System.Drawing.Point(0, 63);
+            this.tabControl.Name = "tabControl";
+            this.tabControl.SelectedIndex = 0;
+            this.tabControl.Size = new System.Drawing.Size(800, 387);
+            this.tabControl.TabIndex = 1;
             // 
             // tabPage1
             // 
@@ -160,11 +180,10 @@
             this.logPanel.SelectionBack = System.Drawing.Color.SteelBlue;
             this.logPanel.SelectionFront = System.Drawing.Color.White;
             this.logPanel.Size = new System.Drawing.Size(786, 355);
-            this.logPanel.TabIndex = 2;
+            this.logPanel.TabIndex = 0;
             // 
             // tabPage2
             // 
-            this.tabPage2.Controls.Add(this.logControl);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
@@ -173,46 +192,12 @@
             this.tabPage2.Text = "LogControl";
             this.tabPage2.UseVisualStyleBackColor = true;
             // 
-            // logControl
-            // 
-            this.logControl.AutoScroll = true;
-            this.logControl.DebugColor = System.Drawing.Color.Gray;
-            this.logControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logControl.ErrorColor = System.Drawing.Color.Tomato;
-            this.logControl.FontSize = 12F;
-            this.logControl.FreezeView = false;
-            this.logControl.InfoColor = System.Drawing.Color.White;
-            this.logControl.LineLimit = 1000;
-            this.logControl.Location = new System.Drawing.Point(3, 3);
-            this.logControl.LogBackColor = System.Drawing.Color.Black;
-            this.logControl.LogFormat = "{TS:HH:mm:ss.fff} {MESSAGE}";
-            this.logControl.Name = "logControl";
-            this.logControl.PollPeriod = 100;
-            this.logControl.SelectingBack = System.Drawing.Color.LightSteelBlue;
-            this.logControl.SelectionBack = System.Drawing.Color.DodgerBlue;
-            this.logControl.SelectionFront = System.Drawing.Color.White;
-            this.logControl.ShowDebug = false;
-            this.logControl.Size = new System.Drawing.Size(786, 355);
-            this.logControl.SuccessColor = System.Drawing.Color.PaleGreen;
-            this.logControl.TabIndex = 0;
-            this.logControl.WarnColor = System.Drawing.Color.Yellow;
-            // 
-            // buttonException
-            // 
-            this.buttonException.Location = new System.Drawing.Point(643, 12);
-            this.buttonException.Name = "buttonException";
-            this.buttonException.Size = new System.Drawing.Size(108, 39);
-            this.buttonException.TabIndex = 7;
-            this.buttonException.Text = "Exception";
-            this.buttonException.UseVisualStyleBackColor = true;
-            this.buttonException.Click += new System.EventHandler(this.buttonException_Click);
-            // 
             // TryoutForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.tabControl1);
+            this.Controls.Add(this.tabControl);
             this.Controls.Add(this.panelTop);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "TryoutForm";
@@ -221,9 +206,8 @@
             this.Load += new System.EventHandler(this.TryoutForm_Load);
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
-            this.tabControl1.ResumeLayout(false);
+            this.tabControl.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
-            this.tabPage2.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -233,7 +217,7 @@
         private System.Windows.Forms.Panel panelTop;
         private System.Windows.Forms.Button button100;
         private System.Windows.Forms.CheckBox checkBoxAsyncFeed;
-        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabControl tabControl;
         private System.Windows.Forms.TabPage tabPage1;
         private LogPanel logPanel;
         private System.Windows.Forms.TabPage tabPage2;
@@ -241,8 +225,8 @@
         private System.Windows.Forms.Button button1000;
         private System.Windows.Forms.Button buttonRefresh100;
         private System.Windows.Forms.Button buttonRefresh10;
-        private LogControl logControl;
         private System.Windows.Forms.Button buttonException;
+        private System.Windows.Forms.Button button10;
     }
 }
 

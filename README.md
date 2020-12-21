@@ -11,7 +11,9 @@
 
 * Check touch screen scrolling
 * Nuget publishing
-* Support .NET Core
+* NET Core support
 * Database appender
+* Test disposables
+* Viewer listener
 * Viewer concept
 

@@ -9,12 +9,18 @@ namespace SharpLogger
 {
 	public class LogPanel : Panel
 	{
-		private ulong moves;
+        private const int WS_VSCROLL = 0x00200000;
+        private const int WS_HSCROLL = 0x00100000;
+        private const int WM_VSCROLL = 0x115;
+        private const int WM_HSCROLL = 0x114;
+        private const int WM_MOUSEWHEEL = 0x020A;
+
+        private bool dirty;
+        private ulong moves;
 		private Point click;
 		private ulong updates;
-		private bool executing;
-		private Queue<Action> actions;
-		private LogModel.SelectionState select;
+        private bool executing;
+        private Queue<Action> actions;
 		private LogModel.OutputState output;
 		private LogModel.InputState input;
 		private Brush selectionBrush;
@@ -33,7 +39,7 @@ namespace SharpLogger
 		[Category("Logging")]
 		public Color SelectionFront { get; set; } = Color.White;
 
-		public LogPanel()
+        public LogPanel()
 		{
 			BackColor = Color.Black;
 			DoubleBuffered = true;
@@ -43,14 +49,18 @@ namespace SharpLogger
 		public void SetLines(params LogLine[] lines)
 		{
 			LogDebug.WriteLine("LogPanel.SetLines {0}", lines.Length);
-			QueueInputChange(() => { input.Lines = new LogModel.Lines(lines); });
+			QueueModelChange(() => {
+                LogDebug.WriteLine("LogPanel.LinesUpdate {0}", lines.Length);
+                input.Lines = new LogModel.Lines(lines);
+                dirty = true;
+            });
 		}
 
 		public string SelectedText()
         {
 			InitializeModel();
 			var sb = new StringBuilder();
-			var sd = model.Selection.Selected;
+			var sd = model.Output.Selected;
 			if (sd != null)
             {
 				foreach (var line in input.Lines.Array)
@@ -71,10 +81,10 @@ namespace SharpLogger
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
-			LogDebug.WriteLine("LogPanel.OnPaint {0}", ViewPort());
-			var si = model.Selection.Selecting;
-			var sd = model.Selection.Selected;
-			var cs = model.Input.CharSize;
+			LogDebug.WriteLine("LogPanel.OnPaint {0} {1}", actions.Count==0, actions.Count);
+			var si = model.Output.Selecting;
+			var sd = model.Output.Selected;
+			var cs = model.Output.CharSize;
 			foreach (var line in model.Output.Visibles.Array)
 			{
 				TextRenderer.DrawText(e.Graphics, line.Line, font, line.View, line.Color);
@@ -128,27 +138,39 @@ namespace SharpLogger
         {
 			LogDebug.WriteLine("LogPanel.OnCreateControl");
 			base.OnCreateControl();
-			QueueInputChange(() => { input.ViewPort = ViewPort(); });
-		}
+            QueueViewportUpdate();
+        }
 
         protected override void OnClientSizeChanged(EventArgs e)
 		{
 			LogDebug.WriteLine("LogPanel.OnClientSizeChanged");
 			base.OnClientSizeChanged(e);
-			QueueInputChange(() => { input.ViewPort = ViewPort(); });
-		}
+            QueueViewportUpdate();
+        }
 
-		//https://stackoverflow.com/questions/1851620/handling-scroll-event-on-listview-in-c-sharp
-		//no practical way to catch scrolling events
-		protected override void WndProc(ref Message m)
+        //leave both scrollbars visible to avoid recursing changes
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.Style |= WS_VSCROLL;
+                cp.Style |= WS_HSCROLL;
+                return cp;
+            }
+        }
+
+        //https://stackoverflow.com/questions/1851620/handling-scroll-event-on-listview-in-c-sharp
+        //no practical way to catch scrolling events
+        protected override void WndProc(ref Message m)
 		{
 			base.WndProc(ref m);
-			if (m.Msg == 0x115 || m.Msg == 0x114 || m.Msg == 0x020A)
+			if (m.Msg == WM_VSCROLL || m.Msg == WM_HSCROLL || m.Msg == WM_MOUSEWHEEL)
 			{
 				LogDebug.WriteLine("LogPanel.OnScrollChanged");
-				QueueInputChange(() => { input.ViewPort = ViewPort(); });
-			}
-		}
+                QueueViewportUpdate();
+            }
+        }
 
 		protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -158,7 +180,7 @@ namespace SharpLogger
 				Capture = true;
 				moves = 0;
 				click = e.Location;
-				ExecuteMouseChange(() => { model.ProcessMouse("down", e.Location, Shift()); });
+                QueueModelChange(() => { model.ProcessMouse("down", e.Location, Shift()); });
 			}
 		}
 
@@ -168,20 +190,23 @@ namespace SharpLogger
 			if (Capture && e.Button == MouseButtons.Left)
 			{
 				moves++;
-				ExecuteMouseChange(() => { model.ProcessMouse("move", e.Location, Shift()); });
-				var cs = model.Input.CharSize;
-				var vp = model.Input.ViewPort;
-				if (e.Location.Y < 0)
+                QueueModelChange(() => { model.ProcessMouse("move", e.Location, Shift()); });
+				var cs = model.Output.CharSize;
+				var vp = model.Output.ViewPort;
+                var y = e.Location.Y;
+                if (y < 0)
                 {
-					VerticalScroll.Value = Math.Max(VerticalScroll.Minimum, VerticalScroll.Value - cs.Height);
-					QueueInputChange(() => { input.ViewPort = ViewPort(); });
-				}
-				if (e.Location.Y > vp.Height)
+                    var increment = cs.Height * (int)Math.Pow(10, Math.Min(3, Math.Abs(y) / cs.Height));
+                    VerticalScroll.Value = Math.Max(VerticalScroll.Minimum, VerticalScroll.Value - increment);
+                    QueueViewportUpdate();
+                }
+                else if (y > vp.Height)
 				{
-					VerticalScroll.Value = Math.Min(VerticalScroll.Maximum, VerticalScroll.Value + cs.Height);
-					QueueInputChange(() => { input.ViewPort = ViewPort(); });
-				}
-			}
+                    var increment = cs.Height * (int)Math.Pow(10, Math.Min(3, Math.Abs(y - vp.Height) / cs.Height));
+                    VerticalScroll.Value = Math.Min(VerticalScroll.Maximum, VerticalScroll.Value + increment);
+                    QueueViewportUpdate();
+                }
+            }
 		}
 
 		protected override void OnMouseUp(MouseEventArgs e)
@@ -192,90 +217,99 @@ namespace SharpLogger
 				Capture = false;
 				//1 move event generated if when not moving the mouse
 				var isClick = moves<=1 && click==e.Location;
-				if (isClick) ExecuteMouseChange(() => { model.ProcessMouse("click", e.Location, Shift()); });
-				else ExecuteMouseChange(() => { model.ProcessMouse("up", e.Location, Shift()); });
+				if (isClick) QueueModelChange(() => { model.ProcessMouse("click", e.Location, Shift()); });
+				else QueueModelChange(() => { model.ProcessMouse("up", e.Location, Shift()); });
 			}
 		}
 
-		private void ExecuteMouseChange(Action action)
-		{
-			//received: down, move, click, up
-			InitializeModel();
-			updates++;
-			action();
-			LogDebug.WriteLine("LogPanel.ExecuteMouseChange {0} S:{1}", updates, model.Selection);
-			var previous = select;
-			var current = new LogModel.SelectionState()
-			{
-				Caret = model.Selection.Caret,
-				Selected = model.Selection.Selected,
-				Selecting = model.Selection.Selecting,
-			};
-			if (LogModel.NotEqual(previous, current))
-			{
-				select = current;
-				Invalidate();
-			}
-		}
-
-		private void QueueInputChange(Action action)
+        private void QueueModelChange(Action action)
 		{
 			InitializeModel();
 			actions.Enqueue(action);
 			if (!executing)
             {
 				executing = true;
-				while (actions.Count > 0) ExecuteInputChange(actions.Dequeue());
-				executing = false;
+                while (actions.Count > 0)
+                {
+                    //apply as much as possible
+                    while (actions.Count > 0)
+                    {
+                        var currentAction = actions.Dequeue();
+                        currentAction();
+                    }
+                    //doble loop to ensure processing 
+                    //nested updates in a single call
+                    SynchronizeModelChange();
+                }
+                executing = false;
 			}
 		}
 
-		private void ExecuteInputChange(Action action)
+		private void SynchronizeModelChange()
 		{
 			updates++;
-			action();
-			LogDebug.WriteLine("LogPanel.ExecuteInputChange {0} I:{1}", updates, input);
-			model.ProcessInput(input);
-			LogDebug.WriteLine("LogPanel.ExecuteInputChange {0} O:{1}", updates, model.Output);
-			LogDebug.WriteLine("LogPanel.ExecuteInputChange {0} S:{1}", updates, model.Selection);
+            if (dirty)
+            {
+                //mouser updates do not require this
+                LogDebug.WriteLine("LogPanel.InputState {0} I:{1}", updates, input);
+                model.ProcessInput(input);
+                dirty = false;
+            }
+            LogDebug.WriteLine("LogPanel.OutputState {0} O:{1}", updates, model.Output);
 			var previous = output;
-			var current = new LogModel.OutputState()
-			{
-				Lines = model.Output.Lines,
-				Visibles = model.Output.Visibles,
-				ScrollSize = model.Output.ScrollSize,
-			};
+            var next = model.Output;
+            var current = new LogModel.OutputState()
+            {
+                Lines = next.Lines,
+                CharSize = next.CharSize,
+                Visibles = next.Visibles,
+                ViewPort = next.ViewPort,
+                Selected = next.Selected,
+                Selecting = next.Selecting,
+                ScrollSize = next.ScrollSize,
+            };
 			if (LogModel.NotEqual(previous, current))
 			{
-				output = current; //cache new output
+                LogDebug.WriteLine("LogPanel.OutputChanged");
+                output = current; //cache new output
 				var scrollSizeChanged = LogModel.NotEqual(current.ScrollSize, previous.ScrollSize);
 				var linesChanged = LogModel.NotEqual(current.Lines, previous.Lines);
 				if (scrollSizeChanged)
 				{
-					LogDebug.WriteLine("LogPanel.scrollSizeChanged");
-					AutoScrollMinSize = current.ScrollSize;
+					LogDebug.WriteLine("LogPanel.ScrollSizeChanged");
+                    //wont issue scroll event
+                    AutoScrollMinSize = current.ScrollSize;
 					VerticalScroll.Value = VerticalScroll.Maximum;
 					HorizontalScroll.Value = 0;
-					//redraw vertical scroll bar
-					//issues client size change on first call
-					//wont issue scroll event
-					PerformLayout();
-					QueueInputChange(() => { input.ViewPort = ViewPort(); });
-				}
-				else if (linesChanged)
+                    //redraw vertical scroll bar
+                    //issues client size change on first call
+                    PerformLayout();
+                    QueueViewportUpdate();
+                }
+                else if (linesChanged)
 				{
-					LogDebug.WriteLine("LogPanel.linesChanged");
-					//wont issue scroll event
-					VerticalScroll.Value = VerticalScroll.Maximum;
+					LogDebug.WriteLine("LogPanel.LinesChanged");
+                    //wont issue scroll event
+                    VerticalScroll.Value = VerticalScroll.Maximum;
 					HorizontalScroll.Value = 0;
-					PerformLayout();
-					QueueInputChange(() => { input.ViewPort = ViewPort(); });
-				}
+                    PerformLayout();
+                    QueueViewportUpdate();
+                }
 				Invalidate();
 			}
-		}
+        }
 
-		private void InitializeModel()
+        private void QueueViewportUpdate()
+        {
+            QueueModelChange(() => {
+                var viewPort = ViewPort();
+                LogDebug.WriteLine("LogPanel.ViewportUpdate {0}", viewPort);
+                input.ViewPort = viewPort;
+                dirty = true;
+            });
+        }
+
+        private void InitializeModel()
 		{
 			if (model == null)
 			{

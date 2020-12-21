@@ -8,19 +8,17 @@ namespace SharpLogger
     {
         private readonly InnerState inner = new InnerState();
 
-        public InputState Input { get; } = new InputState();
         public OutputState Output { get; } = new OutputState();
-        public SelectionState Selection { get; } = new SelectionState();
 
         public void ProcessInput(InputState input)
         {
             LogDebug.WriteLine("LogModel.ProcessInput");
-            var linesChanged = NotEqual(Input.Lines, input.Lines);
-            var viewPortChanged = NotEqual(Input.ViewPort, input.ViewPort);
-            var charSizeChanged = NotEqual(Input.CharSize, input.CharSize);
-            Input.Lines = input.Lines;
-            Input.ViewPort = input.ViewPort;
-            Input.CharSize = input.CharSize;
+            var linesChanged = NotEqual(Output.Lines, input.Lines);
+            var viewPortChanged = NotEqual(Output.ViewPort, input.ViewPort);
+            var charSizeChanged = NotEqual(Output.CharSize, input.CharSize);
+            Output.Lines = input.Lines;
+            Output.ViewPort = input.ViewPort;
+            Output.CharSize = input.CharSize;
             if (linesChanged) InitializeLines();
             if (linesChanged || charSizeChanged) RecalculateScrollSize();
             if (linesChanged || charSizeChanged || viewPortChanged) RecalculateVisibles();
@@ -33,15 +31,13 @@ namespace SharpLogger
             switch (name)
             {
                 case "down":
-                    Selection.Caret = caret;
                     inner.Last = caret;
                     return;
                 case "move":
-                    Selection.Caret = caret;
                     if (inner.Last != null)
                     {
                         var last = inner.Last;
-                        Selection.Selecting = new Region()
+                        Output.Selecting = new Region()
                         {
                             End = Max(caret, last),
                             Start = Min(caret, last),
@@ -49,12 +45,11 @@ namespace SharpLogger
                     }
                     return;
                 case "up":
-                    Selection.Caret = caret;
                     if (inner.Last != null)
                     {
                         var last = inner.Last;
-                        Selection.Selecting = null;
-                        Selection.Selected = new Region()
+                        Output.Selecting = null;
+                        Output.Selected = new Region()
                         {
                             End = Max(caret, last),
                             Start = Min(caret, last),
@@ -62,12 +57,11 @@ namespace SharpLogger
                     }
                     return;
                 case "click":
-                    Selection.Caret = caret;
                     if (inner.Last != null)
                     {
                         var last = inner.Last;
-                        Selection.Selecting = null;
-                        Selection.Selected = new Region()
+                        Output.Selecting = null;
+                        Output.Selected = new Region()
                         {
                             End = Max(caret, last),
                             Start = Min(caret, last),
@@ -83,29 +77,25 @@ namespace SharpLogger
         {
             LogDebug.WriteLine("LogModel.InitializeLines");
             var index = 0;
-            foreach (var line in Input.Lines.Array)
+            foreach (var line in Output.Lines.Array)
             {
                 line.Index = index++;
             }
             inner.Last = null;
-            Output.Lines = Input.Lines;
+            Output.Lines = Output.Lines;
             Output.Visibles = new Lines();
             Output.ScrollSize = new Size();
-            Selection.Selected = null;
-            Selection.Selecting = null;
+            Output.Selected = null;
+            Output.Selecting = null;
             Output.Visibles = null;
-            Selection.Caret = new Caret()
-            {
-                Line = index,
-            };
         }
 
         private void RecalculateScrollSize()
         {
             LogDebug.WriteLine("LogModel.RecalculateScrollSize");
-            var cs = Input.CharSize;
+            var cs = Output.CharSize;
             var ss = new Size(0, 0);
-            foreach (var l in Input.Lines.Array)
+            foreach (var l in Output.Lines.Array)
             {
                 var width = (l.Line.Length + 1) * cs.Width;
                 if (width > ss.Width) ss.Width = width;
@@ -118,12 +108,12 @@ namespace SharpLogger
         private void RecalculateVisibles()
         {
             LogDebug.WriteLine("LogModel.RecalculateVisibles");
-            var cs = Input.CharSize;
-            var vp = Input.ViewPort;
+            var cs = Output.CharSize;
+            var vp = Output.ViewPort;
             var start = vp.Y / cs.Height;
             var end = vp.Bottom / cs.Height;
             var visibles = new List<LogLine>();
-            foreach (var l in Input.Lines.Array)
+            foreach (var l in Output.Lines.Array)
             {
                 var index = l.Index;
                 if ((index >= start && index <= end))
@@ -147,14 +137,14 @@ namespace SharpLogger
 
         private Caret FindCaret(Point pointer)
         {
-            var cs = Input.CharSize;
-            var vp = Input.ViewPort;
+            var cs = Output.CharSize;
+            var vp = Output.ViewPort;
             var start = vp.Y / cs.Height;
             var end = vp.Bottom / cs.Height;
             var line = FindLine(pointer);
             if (line != null)
             {
-                var s = Input.CharSize;
+                var s = Output.CharSize;
                 var r = line.View;
                 var p = pointer;
                 var d = p.X - r.X - s.Width / 2.0;
@@ -183,7 +173,7 @@ namespace SharpLogger
             }
             return new Caret()
             {
-                Line = Input.Lines.Array.Length,
+                Line = Output.Lines.Array.Length,
                 Index = 0,
             };
         }
@@ -249,19 +239,13 @@ namespace SharpLogger
             public Lines Lines { get; set; }
             public Size ScrollSize { get; set; }
             public Lines Visibles { get; set; }
-            public override string ToString()
-            {
-                return $"{Visibles}:{ScrollSize}:{Lines}";
-            }
-        }
-        public class SelectionState
-        {
-            public Caret Caret { get; set; }
+            public Rectangle ViewPort { get; set; }
+            public Size CharSize { get; set; }
             public Region Selected { get; set; }
             public Region Selecting { get; set; }
             public override string ToString()
             {
-                return $"{Caret}:{Selected}:{Selecting}";
+                return $"ls:{Lines},vs:{Visibles},ss:{ScrollSize},vp:{ViewPort},cs:{CharSize},sd:{Selected},si:{Selecting}";
             }
         }
         public class InnerState
