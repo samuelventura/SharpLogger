@@ -10,16 +10,17 @@ namespace SharpLogger.Tryout
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            var tryout = 0;
-            switch (tryout)
+            var dlg = new MainForm();
+            dlg.ShowDialog();
+            switch (dlg.Tryout)
             {
-                case 0:
+                case 1:
                     LogDebug.AddDefaultFile();
                     LogDebug.Enable(typeof(LogPanel).Name);
                     LogDebug.Enable(typeof(LogModel).Name);
                     Application.Run(new PanelTryoutForm());
                     break;
-                case 1:
+                case 2:
                     Application.Run(new ControlTryoutForm());
                     break;
             }
