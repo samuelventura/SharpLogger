@@ -34,8 +34,21 @@ namespace SharpLogger
 
     public class NopLogHandler : ILogHandler
     {
-        public void HandleLog(LogDto log)
-        {
-        }
+        public void HandleLog(LogDto log) {}
+    }
+
+    public class NopLogger : ILogger
+    {
+        public void Debug(string format, params object[] args) { }
+
+        public void Info(string format, params object[] args) { }
+
+        public void Error(string format, params object[] args) { }
+
+        public void Warn(string format, params object[] args) { }
+
+        public void Success(string format, params object[] args) { }
+
+        public void Log(string level, string format, params object[] args) { }
     }
 }

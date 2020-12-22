@@ -1,6 +1,6 @@
 ﻿namespace SharpLogger.Tryout
 {
-    partial class TryoutForm
+    partial class ControlTryoutForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TryoutForm));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ControlTryoutForm));
             this.panelTop = new System.Windows.Forms.Panel();
             this.button10 = new System.Windows.Forms.Button();
             this.buttonException = new System.Windows.Forms.Button();
@@ -38,13 +38,8 @@
             this.checkBoxUseLogger = new System.Windows.Forms.CheckBox();
             this.checkBoxAsyncFeed = new System.Windows.Forms.CheckBox();
             this.button100 = new System.Windows.Forms.Button();
-            this.tabControl = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.logPanel = new SharpLogger.LogPanel();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.logControl = new SharpLogger.LogControl();
             this.panelTop.SuspendLayout();
-            this.tabControl.SuspendLayout();
-            this.tabPage1.SuspendLayout();
             this.SuspendLayout();
             // 
             // panelTop
@@ -69,7 +64,7 @@
             this.button10.Name = "button10";
             this.button10.Size = new System.Drawing.Size(79, 39);
             this.button10.TabIndex = 2;
-            this.button10.Text = "10 Logs";
+            this.button10.Text = "10 Lines";
             this.button10.UseVisualStyleBackColor = true;
             this.button10.Click += new System.EventHandler(this.button10_Click);
             // 
@@ -109,7 +104,7 @@
             this.button1000.Name = "button1000";
             this.button1000.Size = new System.Drawing.Size(74, 39);
             this.button1000.TabIndex = 0;
-            this.button1000.Text = "1000 Logs";
+            this.button1000.Text = "1000 Lines";
             this.button1000.UseVisualStyleBackColor = true;
             this.button1000.Click += new System.EventHandler(this.button1000_Click);
             // 
@@ -141,73 +136,48 @@
             this.button100.Name = "button100";
             this.button100.Size = new System.Drawing.Size(79, 39);
             this.button100.TabIndex = 1;
-            this.button100.Text = "100 Logs";
+            this.button100.Text = "100 Lines";
             this.button100.UseVisualStyleBackColor = true;
             this.button100.Click += new System.EventHandler(this.button100_Click);
             // 
-            // tabControl
+            // logControl
             // 
-            this.tabControl.Controls.Add(this.tabPage1);
-            this.tabControl.Controls.Add(this.tabPage2);
-            this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl.Location = new System.Drawing.Point(0, 63);
-            this.tabControl.Name = "tabControl";
-            this.tabControl.SelectedIndex = 0;
-            this.tabControl.Size = new System.Drawing.Size(800, 387);
-            this.tabControl.TabIndex = 1;
+            this.logControl.AutoScroll = true;
+            this.logControl.DebugColor = System.Drawing.Color.Gray;
+            this.logControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.logControl.ErrorColor = System.Drawing.Color.Tomato;
+            this.logControl.FontSize = 12F;
+            this.logControl.FreezeView = false;
+            this.logControl.InfoColor = System.Drawing.Color.White;
+            this.logControl.LineLimit = 1000;
+            this.logControl.Location = new System.Drawing.Point(0, 63);
+            this.logControl.LogBackColor = System.Drawing.Color.Black;
+            this.logControl.LogFormat = "{TS:HH:mm:ss.fff} {MESSAGE}";
+            this.logControl.Name = "logControl";
+            this.logControl.PollPeriod = 100;
+            this.logControl.SelectingBack = System.Drawing.Color.LightSteelBlue;
+            this.logControl.SelectionBack = System.Drawing.Color.DodgerBlue;
+            this.logControl.SelectionFront = System.Drawing.Color.White;
+            this.logControl.ShowDebug = false;
+            this.logControl.Size = new System.Drawing.Size(800, 387);
+            this.logControl.SuccessColor = System.Drawing.Color.PaleGreen;
+            this.logControl.TabIndex = 1;
+            this.logControl.WarnColor = System.Drawing.Color.Yellow;
             // 
-            // tabPage1
-            // 
-            this.tabPage1.Controls.Add(this.logPanel);
-            this.tabPage1.Location = new System.Drawing.Point(4, 22);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(792, 361);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "LogPanel";
-            this.tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // logPanel
-            // 
-            this.logPanel.AutoScroll = true;
-            this.logPanel.AutoScrollMinSize = new System.Drawing.Size(0, 15);
-            this.logPanel.BackColor = System.Drawing.Color.Black;
-            this.logPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.logPanel.FontSize = 12F;
-            this.logPanel.Location = new System.Drawing.Point(3, 3);
-            this.logPanel.Name = "logPanel";
-            this.logPanel.SelectingBack = System.Drawing.Color.LightSteelBlue;
-            this.logPanel.SelectionBack = System.Drawing.Color.SteelBlue;
-            this.logPanel.SelectionFront = System.Drawing.Color.White;
-            this.logPanel.Size = new System.Drawing.Size(786, 355);
-            this.logPanel.TabIndex = 0;
-            // 
-            // tabPage2
-            // 
-            this.tabPage2.Location = new System.Drawing.Point(4, 22);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(792, 361);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "LogControl";
-            this.tabPage2.UseVisualStyleBackColor = true;
-            // 
-            // TryoutForm
+            // ControlTryoutForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.tabControl);
+            this.Controls.Add(this.logControl);
             this.Controls.Add(this.panelTop);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "TryoutForm";
-            this.Text = "Sharp Logger Tryout";
+            this.Name = "ControlTryoutForm";
+            this.Text = "Sharp Logger Control Tryout";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.TryoutForm_FormClosing);
             this.Load += new System.EventHandler(this.TryoutForm_Load);
             this.panelTop.ResumeLayout(false);
             this.panelTop.PerformLayout();
-            this.tabControl.ResumeLayout(false);
-            this.tabPage1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -217,16 +187,13 @@
         private System.Windows.Forms.Panel panelTop;
         private System.Windows.Forms.Button button100;
         private System.Windows.Forms.CheckBox checkBoxAsyncFeed;
-        private System.Windows.Forms.TabControl tabControl;
-        private System.Windows.Forms.TabPage tabPage1;
-        private LogPanel logPanel;
-        private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.CheckBox checkBoxUseLogger;
         private System.Windows.Forms.Button button1000;
         private System.Windows.Forms.Button buttonRefresh100;
         private System.Windows.Forms.Button buttonRefresh10;
         private System.Windows.Forms.Button buttonException;
         private System.Windows.Forms.Button button10;
+        private LogControl logControl;
     }
 }
 

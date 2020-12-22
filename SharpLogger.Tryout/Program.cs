@@ -1,22 +1,28 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SharpLogger.Tryout
 {
     static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new TryoutForm());
+            var tryout = 0;
+            switch (tryout)
+            {
+                case 0:
+                    LogDebug.AddDefaultFile();
+                    LogDebug.Enable(typeof(LogPanel).Name);
+                    LogDebug.Enable(typeof(LogModel).Name);
+                    Application.Run(new PanelTryoutForm());
+                    break;
+                case 1:
+                    Application.Run(new ControlTryoutForm());
+                    break;
+            }
         }
     }
 }

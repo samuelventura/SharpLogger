@@ -9,7 +9,9 @@ namespace SharpLogger
 {
 	public class LogPanel : Panel
 	{
-        private const int WS_VSCROLL = 0x00200000;
+		private static readonly LogDebug debugger = new LogDebug(typeof(LogPanel).Name);
+
+		private const int WS_VSCROLL = 0x00200000;
         private const int WS_HSCROLL = 0x00100000;
         private const int WM_VSCROLL = 0x115;
         private const int WM_HSCROLL = 0x114;
@@ -48,9 +50,9 @@ namespace SharpLogger
 
 		public void SetLines(params LogLine[] lines)
 		{
-			LogDebug.WriteLine("LogPanel.SetLines {0}", lines.Length);
+			debugger.WriteLine("LogPanel.SetLines {0}", lines.Length);
 			QueueModelChange(() => {
-                LogDebug.WriteLine("LogPanel.LinesUpdate {0}", lines.Length);
+                debugger.WriteLine("LogPanel.LinesUpdate {0}", lines.Length);
                 input.Lines = new LogModel.Lines(lines);
                 dirty = true;
             });
@@ -81,7 +83,7 @@ namespace SharpLogger
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
-			LogDebug.WriteLine("LogPanel.OnPaint {0} {1}", actions.Count==0, actions.Count);
+			debugger.WriteLine("LogPanel.OnPaint {0} {1}", actions.Count==0, actions.Count);
 			var si = model.Output.Selecting;
 			var sd = model.Output.Selected;
 			var cs = model.Output.CharSize;
@@ -136,14 +138,14 @@ namespace SharpLogger
 
 		protected override void OnCreateControl()
         {
-			LogDebug.WriteLine("LogPanel.OnCreateControl");
+			debugger.WriteLine("LogPanel.OnCreateControl");
 			base.OnCreateControl();
             QueueViewportUpdate();
         }
 
         protected override void OnClientSizeChanged(EventArgs e)
 		{
-			LogDebug.WriteLine("LogPanel.OnClientSizeChanged");
+			debugger.WriteLine("LogPanel.OnClientSizeChanged");
 			base.OnClientSizeChanged(e);
             QueueViewportUpdate();
         }
@@ -167,7 +169,7 @@ namespace SharpLogger
 			base.WndProc(ref m);
 			if (m.Msg == WM_VSCROLL || m.Msg == WM_HSCROLL || m.Msg == WM_MOUSEWHEEL)
 			{
-				LogDebug.WriteLine("LogPanel.OnScrollChanged");
+				debugger.WriteLine("LogPanel.OnScrollChanged");
                 QueueViewportUpdate();
             }
         }
@@ -251,11 +253,11 @@ namespace SharpLogger
             if (dirty)
             {
                 //mouser updates do not require this
-                LogDebug.WriteLine("LogPanel.InputState {0} I:{1}", updates, input);
+                debugger.WriteLine("LogPanel.InputState {0} I:{1}", updates, input);
                 model.ProcessInput(input);
                 dirty = false;
             }
-            LogDebug.WriteLine("LogPanel.OutputState {0} O:{1}", updates, model.Output);
+            debugger.WriteLine("LogPanel.OutputState {0} O:{1}", updates, model.Output);
 			var previous = output;
             var next = model.Output;
             var current = new LogModel.OutputState()
@@ -270,13 +272,13 @@ namespace SharpLogger
             };
 			if (LogModel.NotEqual(previous, current))
 			{
-                LogDebug.WriteLine("LogPanel.OutputChanged");
+                debugger.WriteLine("LogPanel.OutputChanged");
                 output = current; //cache new output
 				var scrollSizeChanged = LogModel.NotEqual(current.ScrollSize, previous.ScrollSize);
 				var linesChanged = LogModel.NotEqual(current.Lines, previous.Lines);
 				if (scrollSizeChanged)
 				{
-					LogDebug.WriteLine("LogPanel.ScrollSizeChanged");
+					debugger.WriteLine("LogPanel.ScrollSizeChanged");
                     //wont issue scroll event
                     AutoScrollMinSize = current.ScrollSize;
 					VerticalScroll.Value = VerticalScroll.Maximum;
@@ -288,7 +290,7 @@ namespace SharpLogger
                 }
                 else if (linesChanged)
 				{
-					LogDebug.WriteLine("LogPanel.LinesChanged");
+					debugger.WriteLine("LogPanel.LinesChanged");
                     //wont issue scroll event
                     VerticalScroll.Value = VerticalScroll.Maximum;
 					HorizontalScroll.Value = 0;
@@ -303,7 +305,7 @@ namespace SharpLogger
         {
             QueueModelChange(() => {
                 var viewPort = ViewPort();
-                LogDebug.WriteLine("LogPanel.ViewportUpdate {0}", viewPort);
+                debugger.WriteLine("LogPanel.ViewportUpdate {0}", viewPort);
                 input.ViewPort = viewPort;
                 dirty = true;
             });
@@ -313,7 +315,7 @@ namespace SharpLogger
 		{
 			if (model == null)
 			{
-				LogDebug.WriteLine("LogPanel.InitializeModel");
+				debugger.WriteLine("LogPanel.InitializeModel");
 				model = new LogModel();
 				input = new LogModel.InputState();
 				output = new LogModel.OutputState();

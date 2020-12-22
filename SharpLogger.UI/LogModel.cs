@@ -6,13 +6,15 @@ namespace SharpLogger
 {
     public class LogModel
     {
+        private static readonly LogDebug debugger = new LogDebug(typeof(LogModel).Name);
+
         private readonly InnerState inner = new InnerState();
 
         public OutputState Output { get; } = new OutputState();
 
         public void ProcessInput(InputState input)
         {
-            LogDebug.WriteLine("LogModel.ProcessInput");
+            debugger.WriteLine("LogModel.ProcessInput");
             var linesChanged = NotEqual(Output.Lines, input.Lines);
             var viewPortChanged = NotEqual(Output.ViewPort, input.ViewPort);
             var charSizeChanged = NotEqual(Output.CharSize, input.CharSize);
@@ -26,7 +28,7 @@ namespace SharpLogger
 
         public void ProcessMouse(string name, Point pointer, bool shift)
         {
-            LogDebug.WriteLine("LogModel.ProcessMouse {0} {1} {2}", name, pointer, shift);
+            debugger.WriteLine("LogModel.ProcessMouse {0} {1} {2}", name, pointer, shift);
             var caret = FindCaret(pointer);
             switch (name)
             {
@@ -75,7 +77,7 @@ namespace SharpLogger
 
         private void InitializeLines()
         {
-            LogDebug.WriteLine("LogModel.InitializeLines");
+            debugger.WriteLine("LogModel.InitializeLines");
             var index = 0;
             foreach (var line in Output.Lines.Array)
             {
@@ -92,7 +94,7 @@ namespace SharpLogger
 
         private void RecalculateScrollSize()
         {
-            LogDebug.WriteLine("LogModel.RecalculateScrollSize");
+            debugger.WriteLine("LogModel.RecalculateScrollSize");
             var cs = Output.CharSize;
             var ss = new Size(0, 0);
             foreach (var l in Output.Lines.Array)
@@ -107,7 +109,7 @@ namespace SharpLogger
 
         private void RecalculateVisibles()
         {
-            LogDebug.WriteLine("LogModel.RecalculateVisibles");
+            debugger.WriteLine("LogModel.RecalculateVisibles");
             var cs = Output.CharSize;
             var vp = Output.ViewPort;
             var start = vp.Y / cs.Height;

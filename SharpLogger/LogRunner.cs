@@ -31,12 +31,12 @@ namespace SharpLogger
             thread.Dispose(() => TryFlush(true));
         }
 
-        public void AddAppender(ILogAppender appender, int millis = 100)
+        public void AddAppender(ILogAppender appender, int flushMs = 100)
         {
             thread.Run(() => appenders.Add(new AppenderRT() {
                 Buffer = new List<LogDto>(),
                 Appender = appender,
-                Millis = millis,
+                FlushMs = flushMs,
             }));
         }
 
@@ -65,7 +65,7 @@ namespace SharpLogger
                 var now = DateTime.Now;
                 var oldest = rt.Oldest ?? now;
                 var elapsed = now - oldest;
-                var flush = elapsed.TotalMilliseconds > rt.Millis;
+                var flush = elapsed.TotalMilliseconds > rt.FlushMs;
                 if (force || flush)
                 {
                     try
@@ -101,7 +101,7 @@ namespace SharpLogger
             public ILogAppender Appender;
             public List<LogDto> Buffer;
             public DateTime? Oldest;
-            public int Millis;
+            public int FlushMs;
         }
     }
 
