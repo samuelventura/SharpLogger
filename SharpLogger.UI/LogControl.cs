@@ -161,13 +161,10 @@ namespace SharpLogger
 		{
 			lock (queue)
 			{
-				var list = new List<LogDto>();
-				while (queue.Count > 0)
-				{
-					list.Add(queue.First.Value);
-					queue.RemoveFirst();
-				}
-				return list.ToArray();
+				var array = new LogDto[queue.Count];
+				queue.CopyTo(array, 0);
+				queue.Clear();
+				return array;
 			}
 		}
 
