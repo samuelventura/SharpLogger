@@ -136,15 +136,10 @@ namespace SharpLogger
 			callback(start, length);
 		}
 
-		protected override void OnCreateControl()
-        {
-			debugger.WriteLine("LogPanel.OnCreateControl");
-			base.OnCreateControl();
-            QueueViewportUpdate();
-        }
-
+		//generated twice on start because scrolls visibility change
         protected override void OnClientSizeChanged(EventArgs e)
 		{
+			//OnClientSizeChanged makes OnCreateControl redundant
 			debugger.WriteLine("LogPanel.OnClientSizeChanged");
 			base.OnClientSizeChanged(e);
             QueueViewportUpdate();
@@ -275,7 +270,6 @@ namespace SharpLogger
                 debugger.WriteLine("LogPanel.OutputChanged");
                 output = current; //cache new output
 				var scrollSizeChanged = LogModel.NotEqual(current.ScrollSize, previous.ScrollSize);
-				var linesChanged = LogModel.NotEqual(current.Lines, previous.Lines);
 				if (scrollSizeChanged)
 				{
 					debugger.WriteLine("LogPanel.ScrollSizeChanged");
@@ -283,19 +277,9 @@ namespace SharpLogger
                     AutoScrollMinSize = current.ScrollSize;
 					VerticalScroll.Value = VerticalScroll.Maximum;
 					HorizontalScroll.Value = 0;
-                    //redraw vertical scroll bar
+                    //redraw/repositions vertical scroll bar
                     //issues client size change on first call
                     PerformLayout();
-                    QueueViewportUpdate();
-                }
-                else if (linesChanged)
-				{
-					debugger.WriteLine("LogPanel.LinesChanged");
-                    //wont issue scroll event
-                    VerticalScroll.Value = VerticalScroll.Maximum;
-					HorizontalScroll.Value = 0;
-                    PerformLayout();
-                    QueueViewportUpdate();
                 }
 				Invalidate();
 			}
@@ -305,10 +289,13 @@ namespace SharpLogger
         {
             QueueModelChange(() => {
                 var viewPort = ViewPort();
-                debugger.WriteLine("LogPanel.ViewportUpdate {0}", viewPort);
-                input.ViewPort = viewPort;
-                dirty = true;
-            });
+				if (output.ViewPort != viewPort)
+                {
+					debugger.WriteLine("LogPanel.ViewportUpdate {0}", viewPort);
+					input.ViewPort = viewPort;
+					dirty = true;
+				}
+			});
         }
 
         private void InitializeModel()
@@ -335,7 +322,8 @@ namespace SharpLogger
 				var cs = TextRenderer.MeasureText("-", font);
 				cs.Width /= 2; //returns 14=2*7 for asigned font size = 12
 				input.CharSize = cs;
-				input.Lines = new LogModel.Lines(new LogLine[0]);
+				input.ViewPort = ViewPort();
+				input.Lines = output.Lines;
 			}
 		}
 

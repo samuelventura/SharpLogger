@@ -86,6 +86,7 @@ namespace SharpLogger
             inner.Last = null;
             Output.Lines = Output.Lines;
             Output.Visibles = new Lines();
+            Output.ViewPort = new Rectangle(new Point(), Output.ViewPort.Size);
             Output.ScrollSize = new Size();
             Output.Selected = null;
             Output.Selecting = null;
@@ -103,8 +104,12 @@ namespace SharpLogger
                 if (width > ss.Width) ss.Width = width;
                 ss.Height += cs.Height;
             }
-            ss.Height += cs.Height; //extra row 
+            //extra row only if not empty
+            if (ss.Height > 0) ss.Height += cs.Height; 
             Output.ScrollSize = ss;
+            //scroll to botton by default, few lines should show on top
+            var y = Math.Max(0, ss.Height - Output.ViewPort.Height);
+            Output.ViewPort = new Rectangle(new Point(0, y), Output.ViewPort.Size);
         }
 
         private void RecalculateVisibles()
@@ -112,11 +117,13 @@ namespace SharpLogger
             debugger.WriteLine("LogModel.RecalculateVisibles");
             var cs = Output.CharSize;
             var vp = Output.ViewPort;
-            var start = vp.Y / cs.Height;
-            var end = vp.Bottom / cs.Height;
             var visibles = new List<LogLine>();
-            foreach (var l in Output.Lines.Array)
+            var lines = Output.Lines.Array;
+            var start = Math.Max(0, vp.Y / cs.Height);
+            var end = Math.Min(lines.Length - 1, vp.Bottom / cs.Height);
+            for (var i=start; i<=end; i++)
             {
+                var l = lines[i];
                 var index = l.Index;
                 if ((index >= start && index <= end))
                 {
@@ -238,7 +245,7 @@ namespace SharpLogger
         }
         public class OutputState
         {
-            public Lines Lines { get; set; }
+            public Lines Lines { get; set; } = new Lines();
             public Size ScrollSize { get; set; }
             public Lines Visibles { get; set; }
             public Rectangle ViewPort { get; set; }
