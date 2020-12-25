@@ -38,11 +38,12 @@ namespace SharpLogger.Tryout
             {
                 var line = new LogLine();
                 var sb = new StringBuilder();
-                sb.Append($"Line {i}");
+                sb.Append($"Line.Debug,Name Line.Debug,Name {i}");
                 for (var j = 0; j < i; j++)
                 {
                     sb.Append($" {j}");
                 }
+                sb.Append("Line.Debug,Name");
                 line.Line = sb.ToString();
                 line.Color = ToColor(i);
                 list.Add(line);

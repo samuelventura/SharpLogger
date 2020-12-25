@@ -26,9 +26,9 @@ namespace SharpLogger
             if (linesChanged || charSizeChanged || viewPortChanged) RecalculateVisibles();
         }
 
-        public void ProcessMouse(string name, Point pointer, bool shift)
+        public void ProcessMouse(string name, Point pointer, bool shift, bool control)
         {
-            debugger.WriteLine("LogModel.ProcessMouse {0} {1} {2}", name, pointer, shift);
+            debugger.WriteLine("LogModel.ProcessMouse {0} {1} {2} {3}", name, pointer, shift, control);
             var caret = FindCaret(pointer);
             switch (name)
             {
@@ -59,20 +59,17 @@ namespace SharpLogger
                     }
                     return;
                 case "click":
-                    if (inner.Last != null)
-                    {
-                        var last = inner.Last;
-                        Output.Selecting = null;
-                        Output.Selected = new Region()
-                        {
-                            End = Max(caret, last),
-                            Start = Min(caret, last),
-                        };
-                    }
-                    inner.Last = caret;
+                    inner.Last = null;
+                    Output.Selecting = null;
+                    Output.Selected = null;
+                    return;
+                case "dclick":
+                    inner.Last = null;
+                    Output.Selecting = null;
+                    Output.Selected = Word(caret, shift, control);
                     return;
             }
-            throw new Exception($"Invalid mouser event {name}");
+            throw new Exception($"Invalid mouse event {name}");
         }
 
         private void InitializeLines()
@@ -105,7 +102,7 @@ namespace SharpLogger
                 ss.Height += cs.Height;
             }
             //extra row only if not empty
-            if (ss.Height > 0) ss.Height += cs.Height; 
+            if (ss.Height > 0) ss.Height += cs.Height;
             Output.ScrollSize = ss;
             //scroll to botton by default, few lines should show on top
             var y = Math.Max(0, ss.Height - Output.ViewPort.Height);
@@ -121,7 +118,7 @@ namespace SharpLogger
             var lines = Output.Lines.Array;
             var start = Math.Max(0, vp.Y / cs.Height);
             var end = Math.Min(lines.Length - 1, vp.Bottom / cs.Height);
-            for (var i=start; i<=end; i++)
+            for (var i = start; i <= end; i++)
             {
                 var l = lines[i];
                 var index = l.Index;
@@ -144,6 +141,68 @@ namespace SharpLogger
             Output.Visibles = new Lines(visibles.ToArray());
         }
 
+        private Region Word(Caret caret, bool shift, bool control)
+        {
+            var lines = Output.Lines.Array;
+            if (caret.Line >= 0 && caret.Line < lines.Length)
+            {
+                var line = lines[caret.Line].Line;
+                //shift -> line selection
+                //control -> ignore punctuation
+                if (!shift && caret.Index >= 0 && caret.Index < line.Length)
+                {
+                    if (!char.IsWhiteSpace(line[caret.Index]))
+                    {
+                        var start = caret.Index - 1;
+                        while (true)
+                        {
+                            if (start < 0) break;
+                            var cs = line[start];
+                            if (char.IsWhiteSpace(cs)) break;
+                            if (!control && char.IsPunctuation(cs)) break;
+                            start--;
+                        }
+                        var end = caret.Index + 1;
+                        while (true)
+                        {
+                            if (end > line.Length - 1) break;
+                            var cs = line[end];
+                            if (char.IsWhiteSpace(cs)) break;
+                            if (!control && char.IsPunctuation(cs)) break;
+                            end++;
+                        }
+                        return new Region()
+                        {
+                            Start = new Caret()
+                            {
+                                Line = caret.Line,
+                                Index = start + 1,
+                            },
+                            End = new Caret()
+                            {
+                                Line = caret.Line,
+                                Index = end - 1,
+                            },
+                        };
+                    }
+                }
+                return new Region()
+                {
+                    Start = new Caret()
+                    {
+                        Line = caret.Line,
+                        Index = 0,
+                    },
+                    End = new Caret()
+                    {
+                        Line = caret.Line,
+                        Index = line.Length - 1,
+                    },
+                };
+            }
+            return new Region() { Start = caret, End = caret, };
+        }
+
         private Caret FindCaret(Point pointer)
         {
             var cs = Output.CharSize;
@@ -161,7 +220,7 @@ namespace SharpLogger
                 return new Caret()
                 {
                     Line = line.Index,
-                    Index = Math.Min(line.Line.Length, Math.Max(i,-1)),
+                    Index = Math.Min(line.Line.Length, Math.Max(i, -1)),
                 };
             }
             var visibles = Output.Visibles.Array;

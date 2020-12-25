@@ -100,6 +100,117 @@ namespace SharpLogger
             }
         }
 
+        protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
+        {
+            base.OnPreviewKeyDown(e);
+            if (e.Control && e.KeyCode == Keys.C)
+            {
+                Clipboard.Clear();
+                var selectedText = SelectedText();
+                if (!string.IsNullOrEmpty(selectedText))
+                {
+                    //throws even on empty strings
+                    Clipboard.SetText(selectedText);
+                }
+            }
+        }
+
+        //generated twice on start because scrolls visibility change
+        protected override void OnClientSizeChanged(EventArgs e)
+        {
+            //OnClientSizeChanged makes OnCreateControl redundant
+            debugger.WriteLine("LogPanel.OnClientSizeChanged");
+            base.OnClientSizeChanged(e);
+            QueueViewportUpdate();
+        }
+
+        //leave both scrollbars visible to avoid recursing changes
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.Style |= WS_VSCROLL;
+                cp.Style |= WS_HSCROLL;
+                return cp;
+            }
+        }
+
+        //https://stackoverflow.com/questions/1851620/handling-scroll-event-on-listview-in-c-sharp
+        //no practical way to catch scrolling events
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            if (m.Msg == WM_VSCROLL || m.Msg == WM_HSCROLL || m.Msg == WM_MOUSEWHEEL)
+            {
+                debugger.WriteLine("LogPanel.OnScrollChanged");
+                QueueViewportUpdate();
+            }
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            Focus();
+            base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Left)
+            {
+                Capture = true;
+                moves = 0;
+                click = e.Location;
+                QueueMouseEvent("down", e.Location);
+            }
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            if (Capture && e.Button == MouseButtons.Left)
+            {
+                moves++;
+                QueueMouseEvent("move", e.Location);
+                var cs = model.Output.CharSize;
+                var vp = model.Output.ViewPort;
+                var y = e.Location.Y;
+                if (y < 0)
+                {
+                    var increment = cs.Height * (int)Math.Pow(10, Math.Min(3, Math.Abs(y) / cs.Height));
+                    VerticalScroll.Value = Math.Max(VerticalScroll.Minimum, VerticalScroll.Value - increment);
+                    QueueViewportUpdate();
+                }
+                else if (y > vp.Height)
+                {
+                    var increment = cs.Height * (int)Math.Pow(10, Math.Min(3, Math.Abs(y - vp.Height) / cs.Height));
+                    VerticalScroll.Value = Math.Min(VerticalScroll.Maximum, VerticalScroll.Value + increment);
+                    QueueViewportUpdate();
+                }
+            }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            if (Capture && e.Button == MouseButtons.Left)
+            {
+                Capture = false;
+                var isClick = moves <= 1 && click == e.Location;
+                if (!isClick) QueueMouseEvent("up", e.Location);
+            }
+        }
+
+        protected override void OnMouseClick(MouseEventArgs e)
+        {
+            base.OnMouseClick(e);
+            //1 move event generated even when not moving the mouse
+            var isClick = moves <= 1 && click == e.Location;
+            if (isClick) QueueMouseEvent("click", e.Location);
+        }
+
+        protected override void OnMouseDoubleClick(MouseEventArgs e)
+        {
+            base.OnMouseDoubleClick(e);
+            QueueMouseEvent("dclick", e.Location);
+        }
+
         private void Render(Graphics g, LogModel.Region r, LogLine l, Brush b, Size cs)
         {
             VisitSelection(r, l, (start, length) =>
@@ -140,107 +251,6 @@ namespace SharpLogger
                 length = Math.Min(l.Line.Length - 1, r.End.Index) + 1;
             }
             callback(start, length);
-        }
-
-        protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
-        {
-            base.OnPreviewKeyDown(e);
-            if (e.Control && e.KeyCode == Keys.C)
-            {
-                Clipboard.Clear();
-                var selectedText = SelectedText();
-                if (!string.IsNullOrEmpty(selectedText))
-                {
-                    //throws even on empty strings
-                    Clipboard.SetText(selectedText);
-                }
-            }
-        }
-
-        //generated twice on start because scrolls visibility change
-
-        //generated twice on start because scrolls visibility change
-        protected override void OnClientSizeChanged(EventArgs e)
-        {
-            //OnClientSizeChanged makes OnCreateControl redundant
-            debugger.WriteLine("LogPanel.OnClientSizeChanged");
-            base.OnClientSizeChanged(e);
-            QueueViewportUpdate();
-        }
-
-        //leave both scrollbars visible to avoid recursing changes
-        protected override CreateParams CreateParams
-        {
-            get
-            {
-                var cp = base.CreateParams;
-                cp.Style |= WS_VSCROLL;
-                cp.Style |= WS_HSCROLL;
-                return cp;
-            }
-        }
-
-        //https://stackoverflow.com/questions/1851620/handling-scroll-event-on-listview-in-c-sharp
-        //no practical way to catch scrolling events
-        protected override void WndProc(ref Message m)
-        {
-            base.WndProc(ref m);
-            if (m.Msg == WM_VSCROLL || m.Msg == WM_HSCROLL || m.Msg == WM_MOUSEWHEEL)
-            {
-                debugger.WriteLine("LogPanel.OnScrollChanged");
-                QueueViewportUpdate();
-            }
-        }
-
-        protected override void OnMouseDown(MouseEventArgs e)
-        {
-            Focus();
-            //base.OnMouseDown(e); //prevent click event
-            if (e.Button == MouseButtons.Left)
-            {
-                Capture = true;
-                moves = 0;
-                click = e.Location;
-                QueueModelChange(() => { model.ProcessMouse("down", e.Location, Shift()); });
-            }
-        }
-
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            //base.OnMouseDown(e); //prevent click event
-            if (Capture && e.Button == MouseButtons.Left)
-            {
-                moves++;
-                QueueModelChange(() => { model.ProcessMouse("move", e.Location, Shift()); });
-                var cs = model.Output.CharSize;
-                var vp = model.Output.ViewPort;
-                var y = e.Location.Y;
-                if (y < 0)
-                {
-                    var increment = cs.Height * (int)Math.Pow(10, Math.Min(3, Math.Abs(y) / cs.Height));
-                    VerticalScroll.Value = Math.Max(VerticalScroll.Minimum, VerticalScroll.Value - increment);
-                    QueueViewportUpdate();
-                }
-                else if (y > vp.Height)
-                {
-                    var increment = cs.Height * (int)Math.Pow(10, Math.Min(3, Math.Abs(y - vp.Height) / cs.Height));
-                    VerticalScroll.Value = Math.Min(VerticalScroll.Maximum, VerticalScroll.Value + increment);
-                    QueueViewportUpdate();
-                }
-            }
-        }
-
-        protected override void OnMouseUp(MouseEventArgs e)
-        {
-            //base.OnMouseDown(e); //prevent click event
-            if (Capture && e.Button == MouseButtons.Left)
-            {
-                Capture = false;
-                //1 move event generated if when not moving the mouse
-                var isClick = moves <= 1 && click == e.Location;
-                if (isClick) QueueModelChange(() => { model.ProcessMouse("click", e.Location, Shift()); });
-                else QueueModelChange(() => { model.ProcessMouse("up", e.Location, Shift()); });
-            }
         }
 
         private void QueueModelChange(Action action)
@@ -309,6 +319,13 @@ namespace SharpLogger
             }
         }
 
+        private void QueueMouseEvent(string name, Point point)
+        {
+            var shift = (Control.ModifierKeys & Keys.Shift) == Keys.Shift;
+            var control = (Control.ModifierKeys & Keys.Control) == Keys.Control;
+            QueueModelChange(() => { model.ProcessMouse(name, point, shift, control); });
+        }
+
         private void QueueViewportUpdate()
         {
             QueueModelChange(() =>
@@ -358,11 +375,6 @@ namespace SharpLogger
             offset.X *= -1;
             offset.Y *= -1;
             return new Rectangle(offset, ClientSize);
-        }
-
-        private bool Shift()
-        {
-            return (Control.ModifierKeys & Keys.Shift) == Keys.Shift;
         }
     }
 }
