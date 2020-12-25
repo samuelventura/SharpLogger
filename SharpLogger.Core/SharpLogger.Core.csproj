@@ -6,7 +6,7 @@
     <Authors>Samuel Ventura</Authors>
     <Copyright>Copyright © Samuel Ventura 2020</Copyright>
     <Description>Basic Logger</Description>    
-    <PackageId>SharpLogger</PackageId>
+    <PackageId>SharpLogger.Core</PackageId>
     <PackageProjectUrl>https://github.com/samuelventura/SharpLogger</PackageProjectUrl>  
     <PackageLicenseExpression>MIT</PackageLicenseExpression>  
   </PropertyGroup>
