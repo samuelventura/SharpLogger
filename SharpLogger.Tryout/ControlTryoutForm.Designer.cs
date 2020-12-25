@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ControlTryoutForm));
             this.panelTop = new System.Windows.Forms.Panel();
             this.button10 = new System.Windows.Forms.Button();
             this.buttonException = new System.Windows.Forms.Button();
@@ -171,7 +170,6 @@
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.logControl);
             this.Controls.Add(this.panelTop);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ControlTryoutForm";
             this.Text = "Sharp Logger Control Tryout";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.TryoutForm_FormClosing);

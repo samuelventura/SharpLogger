@@ -5,7 +5,7 @@ using SharpTabs;
 
 namespace SharpLogger.Viewer
 {
-    public class LogFactory : SessionFactory
+    public class LogFactory : ISessionFactory
     {
         public LogFactory(string pth)
         {
@@ -23,12 +23,12 @@ namespace SharpLogger.Viewer
 
         public string Status => throw new NotImplementedException();
 
-        public SessionDto[] Load()
+        public ISessionDto[] Load()
         {
             throw new NotImplementedException();
         }
 
-        public SessionDto[] Load(string path)
+        public ISessionDto[] Load(string path)
         {
             throw new NotImplementedException();
         }
@@ -38,12 +38,12 @@ namespace SharpLogger.Viewer
             throw new NotImplementedException();
         }
 
-        public void Save(SessionDto[] dtos)
+        public void Save(ISessionDto[] dtos)
         {
             throw new NotImplementedException();
         }
 
-        public void Save(string path, SessionDto[] dtos)
+        public void Save(string path, ISessionDto[] dtos)
         {
             throw new NotImplementedException();
         }
@@ -58,12 +58,12 @@ namespace SharpLogger.Viewer
             throw new NotImplementedException();
         }
 
-        public SessionDto Unwrap(Control control)
+        public ISessionDto Unwrap(Control control)
         {
             throw new NotImplementedException();
         }
 
-        public Control Wrap(SessionDto dto)
+        public Control Wrap(ISessionDto dto)
         {
             throw new NotImplementedException();
         }

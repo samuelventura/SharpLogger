@@ -20,7 +20,7 @@ namespace SharpLogger.Tryout
 
         private string ToLevel(int index)
         {
-            switch(index % 5)
+            switch (index % 5)
             {
                 case 0:
                     return LogDto.DEBUG;
@@ -47,7 +47,8 @@ namespace SharpLogger.Tryout
             log.AddAppender(new LogFile());
             log.AddAppender(logControl);
 
-            Task.Run(() => {
+            Task.Factory.StartNew(() =>
+            {
                 var i = 0;
                 var dts = DateTime.Now;
                 while (true)
@@ -70,7 +71,7 @@ namespace SharpLogger.Tryout
                     if (i % 5 == 2) dto.Message = StackTrace();
                     if (useLogger) log.Log(dto.Level, dto.Message);
                     else logControl.HandleLog(dto);
-                    if (i%10==0) Thread.Sleep(1);
+                    if (i % 10 == 0) Thread.Sleep(1);
                     i++;
                 }
             });
