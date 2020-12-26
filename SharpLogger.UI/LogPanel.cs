@@ -301,6 +301,10 @@ namespace SharpLogger
             };
             if (LogModel.NotEqual(previous, current))
             {
+                //WinForms scrollbars suck
+                //https://github.com/dotnet/winforms/tree/master/src/System.Windows.Forms/src/System/Windows/Forms
+                //http://csharphelper.com/blog/2018/03/let-the-user-select-the-scrollbar-maximum-in-c/
+                //https://stackoverflow.com/questions/2882789/net-vertical-scrollbar-not-respecting-maximum-property
                 debugger.WriteLine("LogPanel.OutputChanged");
                 output = current; //cache new output
                 var scrollSizeChanged = LogModel.NotEqual(current.ScrollSize, previous.ScrollSize);
