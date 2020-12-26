@@ -302,6 +302,9 @@ namespace SharpLogger
             if (LogModel.NotEqual(previous, current))
             {
                 //WinForms scrollbars suck
+                //Freeze on scroll is a wont fix and maybe not fixable because no way to detect bottom
+                //when scroll size is smaller then client size. Freeze on click or freeze on selection change
+                //may be a better alternative. 
                 //https://github.com/dotnet/winforms/tree/master/src/System.Windows.Forms/src/System/Windows/Forms
                 //http://csharphelper.com/blog/2018/03/let-the-user-select-the-scrollbar-maximum-in-c/
                 //https://stackoverflow.com/questions/2882789/net-vertical-scrollbar-not-respecting-maximum-property
